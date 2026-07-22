@@ -27,7 +27,14 @@ class TodoListItem(ListItem):
         """Update the display text based on todo state."""
         status = "✓" if self.todo.completed else " "
         style = "dim" if self.todo.completed else ""
-        self._label = Label(f"[{status}] {self.todo.title}")
+        
+        # Add postponed indicator
+        postponed = ""
+        if self.todo.is_postponed():
+            postponed = f" [postponed until {self.todo.postpone_until}]"
+            style = "postponed"
+        
+        self._label = Label(f"[{status}] {self.todo.title}{postponed}")
         if style:
             self._label.add_class(style)
     
@@ -74,6 +81,11 @@ class TodoApp(App):
         text-style: dim;
     }
     
+    .postponed {
+        color: $warning;
+        text-style: italic;
+    }
+    
     Footer {
         background: $panel;
     }
@@ -83,6 +95,7 @@ class TodoApp(App):
         Binding("q", "quit", "Quit", priority=True),
         Binding("space", "toggle_todo", "Toggle", show=True),
         Binding("d", "delete_todo", "Delete", show=True),
+        Binding("p", "postpone_todo", "Postpone", show=True),
     ]
     
     def __init__(self):
@@ -120,6 +133,7 @@ class TodoApp(App):
         list_view = self.query_one("#todo-list", ListView)
         list_view.clear()
         for todo in self.todos:
+            # Show all todos, including postponed ones
             list_view.append(TodoListItem(todo))
     
     def on_input_submitted(self, event: Input.Submitted) -> None:
@@ -169,6 +183,21 @@ class TodoApp(App):
                 self.notify(f"Deleted: {todo.title}", timeout=2)
             except Exception as e:
                 self.notify(f"Error deleting todo: {e}", severity="error")
+    
+    def action_postpone_todo(self) -> None:
+        """Postpone the selected todo until tomorrow."""
+        list_view = self.query_one("#todo-list", ListView)
+        if list_view.index is not None and 0 <= list_view.index < len(self.todos):
+            todo = self.todos[list_view.index]
+            todo.postpone_until_tomorrow()
+            try:
+                self.storage.update(todo)
+                self._refresh_list()
+                # Restore selection
+                list_view.index = list_view.index
+                self.notify(f"Postponed until {todo.postpone_until}", timeout=2)
+            except Exception as e:
+                self.notify(f"Error postponing todo: {e}", severity="error")
 
 
 def main():

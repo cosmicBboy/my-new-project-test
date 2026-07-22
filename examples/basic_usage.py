@@ -30,6 +30,23 @@ def example_models():
     print(f"Completed at: {todo.completed_at}")
     print()
     
+    # Toggle back
+    todo.toggle_completed()
+    print(f"After un-completing: {todo}")
+    print()
+    
+    # Postpone until tomorrow
+    todo.postpone_until_tomorrow()
+    print(f"After postponing: {todo}")
+    print(f"Postpone until: {todo.postpone_until}")
+    print(f"Is postponed: {todo.is_postponed()}")
+    print()
+    
+    # Clear postpone
+    todo.clear_postpone()
+    print(f"After clearing postpone: {todo}")
+    print()
+    
     # Serialize to dict
     data = todo.to_dict()
     print(f"Serialized: {data}")
@@ -80,6 +97,13 @@ def example_storage():
         print(f"Updated: {first_todo}")
         print()
         
+        # Postpone the second todo
+        second_todo = loaded[1]
+        second_todo.postpone_until_tomorrow()
+        storage.update(second_todo)
+        print(f"Postponed: {second_todo}")
+        print()
+        
         # Delete the last todo
         last_todo = loaded[-1]
         storage.delete(last_todo.id)
@@ -116,6 +140,7 @@ def example_app_info():
     print("  Tab     : Switch between list and input")
     print("  Enter   : Add new todo (when in input)")
     print("  Space   : Toggle completion")
+    print("  p       : Postpone todo until tomorrow")
     print("  d       : Delete todo")
     print("  q       : Quit")
     print()
