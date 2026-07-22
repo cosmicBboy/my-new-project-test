@@ -8,6 +8,7 @@ A simple, interactive TODO list application with a Text User Interface (TUI) bui
 ## Features
 
 - 📝 Add, complete, and delete TODO items
+- ⏰ Postpone TODO items until tomorrow
 - 💾 Automatic persistence (data saved between sessions)
 - ⌨️ Keyboard-driven interface
 - 🎨 Clean, modern TUI design
@@ -64,6 +65,7 @@ uv run todo-tui
 | `Tab` | Switch between list and input field |
 | `Enter` | Add new TODO (when in input field) |
 | `Space` | Toggle TODO completion status |
+| `p` | Postpone selected TODO until tomorrow |
 | `d` | Delete selected TODO |
 | `q` | Quit application |
 
@@ -71,8 +73,19 @@ uv run todo-tui
 
 1. **Add a TODO**: Press `Tab` to focus the input field, type your task, and press `Enter`
 2. **Complete a TODO**: Navigate to the item and press `Space`
-3. **Delete a TODO**: Navigate to the item and press `d`
-4. **Exit**: Press `q` to quit (your data is automatically saved)
+3. **Postpone a TODO**: Navigate to the item and press `p` to postpone it until tomorrow
+4. **Delete a TODO**: Navigate to the item and press `d`
+5. **Exit**: Press `q` to quit (your data is automatically saved)
+
+### Postponing TODOs
+
+The postpone feature allows you to defer tasks until tomorrow:
+
+- Press `p` on any TODO item to postpone it until tomorrow
+- Postponed items are displayed with a `[postponed until YYYY-MM-DD]` indicator
+- Postponed items remain visible in the list with an italic style
+- Pressing `p` multiple times keeps the postpone date as tomorrow (it doesn't advance further)
+- Postponed items automatically become active again after the postpone date passes
 
 ## Data Storage
 

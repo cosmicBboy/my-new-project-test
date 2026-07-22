@@ -3,12 +3,12 @@
 
 This script demonstrates advanced features and patterns for working with
 the TODO app programmatically, including batch operations, filtering,
-date queries, and storage manipulation.
+date queries, postpone features, and storage manipulation.
 """
 
 import tempfile
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from uuid import uuid4
 
 from todo_tui.models import TodoItem
@@ -52,11 +52,21 @@ def example_batch_operations():
         print(f"Completed {3} todos")
         print()
         
+        # Batch postpone some todos
+        print("Postponing 2 incomplete todos...")
+        incomplete = [t for t in all_todos if not t.completed]
+        for i in range(min(2, len(incomplete))):
+            incomplete[i].postpone_until_tomorrow()
+            storage.update(incomplete[i])
+        print(f"Postponed {min(2, len(incomplete))} todos until tomorrow")
+        print()
+        
         # Display status
         all_todos = storage.get_all()
         completed = sum(1 for t in all_todos if t.completed)
+        postponed = sum(1 for t in all_todos if t.is_postponed())
         incomplete = len(all_todos) - completed
-        print(f"Status: {completed} completed, {incomplete} incomplete")
+        print(f"Status: {completed} completed, {postponed} postponed, {incomplete} incomplete")
         print()
         
         # Batch delete completed todos
@@ -71,7 +81,8 @@ def example_batch_operations():
         remaining = storage.get_all()
         print(f"Remaining todos: {len(remaining)}")
         for todo in remaining:
-            print(f"  - {todo.title}")
+            status = "[postponed]" if todo.is_postponed() else "[active]"
+            print(f"  - {todo.title} {status}")
         print()
         
     finally:
@@ -103,6 +114,10 @@ def example_filtering_and_queries():
         todos[2].toggle_completed()
         todos[4].toggle_completed()
         
+        # Postpone some
+        todos[1].postpone_until_tomorrow()
+        todos[3].postpone_until_tomorrow()
+        
         for todo in todos:
             storage.add(todo)
         
@@ -110,13 +125,25 @@ def example_filtering_and_queries():
         all_todos = storage.get_all()
         completed = [t for t in all_todos if t.completed]
         incomplete = [t for t in all_todos if not t.completed]
+        postponed = [t for t in all_todos if t.is_postponed()]
+        active = [t for t in all_todos if not t.completed and not t.is_postponed()]
         
         print(f"Completed todos ({len(completed)}):")
         for todo in completed:
             print(f"  ✓ {todo.title}")
         print()
         
-        print(f"Incomplete todos ({len(incomplete)}):")
+        print(f"Postponed todos ({len(postponed)}):")
+        for todo in postponed:
+            print(f"  ⏰ {todo.title} (until {todo.postpone_until})")
+        print()
+        
+        print(f"Active todos ({len(active)}):")
+        for todo in active:
+            print(f"  ☐ {todo.title}")
+        print()
+        
+        print(f"All incomplete todos ({len(incomplete)}):")
         for todo in incomplete:
             print(f"  ☐ {todo.title}")
         print()
@@ -135,6 +162,94 @@ def example_filtering_and_queries():
             matches = [t for t in all_todos if keyword.lower() in t.title.lower()]
             if matches:
                 print(f"Todos with '{keyword}': {', '.join(t.title for t in matches)}")
+        print()
+        
+    finally:
+        if storage_path.exists():
+            storage_path.unlink()
+
+
+def example_postpone_features():
+    """Demonstrate postpone functionality."""
+    print("=== Postpone Features Example ===")
+    
+    with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json') as f:
+        storage_path = Path(f.name)
+    
+    try:
+        storage = TodoStorage(storage_path)
+        
+        # Create some todos
+        todo1 = TodoItem(title="Task to postpone")
+        todo2 = TodoItem(title="Task with custom postpone date")
+        todo3 = TodoItem(title="Expired postpone task")
+        
+        # Postpone to tomorrow
+        print("Postponing task to tomorrow...")
+        todo1.postpone_until_tomorrow()
+        print(f"  {todo1.title} postponed until {todo1.postpone_until}")
+        print(f"  Is postponed: {todo1.is_postponed()}")
+        print()
+        
+        # Set custom postpone date (3 days from now)
+        print("Setting custom postpone date (3 days)...")
+        todo2.postpone_until = date.today() + timedelta(days=3)
+        print(f"  {todo2.title} postponed until {todo2.postpone_until}")
+        print(f"  Is postponed: {todo2.is_postponed()}")
+        print()
+        
+        # Simulate expired postpone (yesterday)
+        print("Testing expired postpone date...")
+        todo3.postpone_until = date.today() - timedelta(days=1)
+        print(f"  {todo3.title} postpone date: {todo3.postpone_until}")
+        print(f"  Is postponed: {todo3.is_postponed()} (expired, so False)")
+        print()
+        
+        # Save all
+        for todo in [todo1, todo2, todo3]:
+            storage.add(todo)
+        
+        # Load and check
+        all_todos = storage.get_all()
+        currently_postponed = [t for t in all_todos if t.is_postponed()]
+        expired_postponed = [
+            t for t in all_todos 
+            if t.postpone_until and not t.is_postponed()
+        ]
+        
+        print(f"Currently postponed todos: {len(currently_postponed)}")
+        for todo in currently_postponed:
+            days_until = (todo.postpone_until - date.today()).days
+            print(f"  - {todo.title} ({days_until} days)")
+        print()
+        
+        print(f"Expired postpone todos: {len(expired_postponed)}")
+        for todo in expired_postponed:
+            print(f"  - {todo.title} (was postponed until {todo.postpone_until})")
+        print()
+        
+        # Clear postpone
+        print("Clearing postpone from first task...")
+        todo1.clear_postpone()
+        storage.update(todo1)
+        print(f"  {todo1.title} postpone cleared")
+        print(f"  Postpone date: {todo1.postpone_until}")
+        print()
+        
+        # Postpone multiple times
+        print("Testing multiple postpone calls...")
+        test_todo = TodoItem(title="Multi-postpone test")
+        print(f"  First postpone: ", end="")
+        test_todo.postpone_until_tomorrow()
+        first_date = test_todo.postpone_until
+        print(f"{first_date}")
+        
+        print(f"  Second postpone: ", end="")
+        test_todo.postpone_until_tomorrow()
+        second_date = test_todo.postpone_until
+        print(f"{second_date}")
+        
+        print(f"  Dates match: {first_date == second_date} (always tomorrow from today)")
         print()
         
     finally:
@@ -169,7 +284,11 @@ def example_date_queries():
         completed_todo.created_at = now - timedelta(days=1)
         completed_todo.toggle_completed()
         
-        for todo in [old_todo, recent_todo, new_todo, completed_todo]:
+        # Add a postponed todo
+        postponed_todo = TodoItem(title="Postponed task")
+        postponed_todo.postpone_until_tomorrow()
+        
+        for todo in [old_todo, recent_todo, new_todo, completed_todo, postponed_todo]:
             storage.add(todo)
         
         all_todos = storage.get_all()
@@ -200,6 +319,14 @@ def example_date_queries():
         print(f"Completed in last 24 hours: {len(recently_completed)}")
         for todo in recently_completed:
             print(f"  ✓ {todo.title}")
+        print()
+        
+        # Find todos postponed to future dates
+        future_postponed = [t for t in all_todos if t.is_postponed()]
+        print(f"Todos postponed to future: {len(future_postponed)}")
+        for todo in future_postponed:
+            days_until = (todo.postpone_until - date.today()).days
+            print(f"  ⏰ {todo.title} (in {days_until} days)")
         print()
         
         # Sort todos by creation date
@@ -244,6 +371,7 @@ def example_storage_migration():
             TodoItem(title="Task 3"),
         ]
         todos[0].toggle_completed()
+        todos[1].postpone_until_tomorrow()
         
         for todo in todos:
             source.add(todo)
@@ -251,13 +379,16 @@ def example_storage_migration():
         print(f"Source contains {len(source.get_all())} todos")
         print()
         
-        # Migrate only incomplete todos
+        # Migrate only active (not completed, not postponed) todos
         dest = TodoStorage(dest_path)
         source_todos = source.get_all()
-        incomplete_todos = [t for t in source_todos if not t.completed]
+        active_todos = [
+            t for t in source_todos 
+            if not t.completed and not t.is_postponed()
+        ]
         
-        print(f"Migrating {len(incomplete_todos)} incomplete todos...")
-        for todo in incomplete_todos:
+        print(f"Migrating {len(active_todos)} active todos...")
+        for todo in active_todos:
             dest.add(todo)
         
         print(f"Destination now contains {len(dest.get_all())} todos")
@@ -370,6 +501,10 @@ def example_statistics_and_reporting():
         todos[0].toggle_completed()
         todos[2].toggle_completed()
         
+        # Postpone some
+        todos[1].postpone_until_tomorrow()
+        todos[4].postpone_until_tomorrow()
+        
         for todo in todos:
             storage.add(todo)
         
@@ -382,11 +517,15 @@ def example_statistics_and_reporting():
         
         total = len(all_todos)
         completed = sum(1 for t in all_todos if t.completed)
+        postponed = sum(1 for t in all_todos if t.is_postponed())
+        active = sum(1 for t in all_todos if not t.completed and not t.is_postponed())
         incomplete = total - completed
         completion_rate = (completed / total * 100) if total > 0 else 0
         
         print(f"Total todos:        {total}")
         print(f"Completed:          {completed}")
+        print(f"Postponed:          {postponed}")
+        print(f"Active:             {active}")
         print(f"Incomplete:         {incomplete}")
         print(f"Completion rate:    {completion_rate:.1f}%")
         print()
@@ -397,9 +536,9 @@ def example_statistics_and_reporting():
         low_priority = [t for t in all_todos if "low priority" in t.title.lower()]
         
         print("Priority Breakdown:")
-        print(f"  High:   {len(high_priority)} ({sum(1 for t in high_priority if t.completed)} completed)")
-        print(f"  Medium: {len(medium_priority)} ({sum(1 for t in medium_priority if t.completed)} completed)")
-        print(f"  Low:    {len(low_priority)} ({sum(1 for t in low_priority if t.completed)} completed)")
+        print(f"  High:   {len(high_priority)} ({sum(1 for t in high_priority if t.completed)} completed, {sum(1 for t in high_priority if t.is_postponed())} postponed)")
+        print(f"  Medium: {len(medium_priority)} ({sum(1 for t in medium_priority if t.completed)} completed, {sum(1 for t in medium_priority if t.is_postponed())} postponed)")
+        print(f"  Low:    {len(low_priority)} ({sum(1 for t in low_priority if t.completed)} completed, {sum(1 for t in low_priority if t.is_postponed())} postponed)")
         print()
         
         # Age analysis
@@ -459,6 +598,7 @@ def example_multi_storage():
             TodoItem(title="Grocery shopping"),
             TodoItem(title="Pay bills"),
         ]
+        personal_todos[0].postpone_until_tomorrow()
         for todo in personal_todos:
             personal_storage.add(todo)
         
@@ -477,7 +617,8 @@ def example_multi_storage():
         
         print("Personal todos:")
         for todo in personal_storage.get_all():
-            print(f"  - {todo.title}")
+            status = " [postponed]" if todo.is_postponed() else ""
+            print(f"  - {todo.title}{status}")
         print()
         
         print("Learning todos:")
@@ -494,11 +635,15 @@ def example_multi_storage():
         
         print("Summary across all projects:")
         total_todos = 0
+        total_postponed = 0
         for name, storage in all_projects:
-            count = len(storage.get_all())
+            todos = storage.get_all()
+            count = len(todos)
+            postponed = sum(1 for t in todos if t.is_postponed())
             total_todos += count
-            print(f"  {name}: {count} todos")
-        print(f"  Total: {total_todos} todos")
+            total_postponed += postponed
+            print(f"  {name}: {count} todos ({postponed} postponed)")
+        print(f"  Total: {total_todos} todos ({total_postponed} postponed)")
         print()
         
     finally:
@@ -517,6 +662,9 @@ def main():
     print()
     
     example_filtering_and_queries()
+    print()
+    
+    example_postpone_features()
     print()
     
     example_date_queries()
@@ -540,6 +688,7 @@ def main():
     print("These examples demonstrate:")
     print("  ✓ Batch operations (create, update, delete)")
     print("  ✓ Filtering and searching todos")
+    print("  ✓ Postpone features and date handling")
     print("  ✓ Date-based queries and analysis")
     print("  ✓ Storage migration and backup")
     print("  ✓ Error handling and recovery")

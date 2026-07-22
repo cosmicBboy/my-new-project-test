@@ -1,6 +1,7 @@
 """Tests for the Textual application."""
 
 import pytest
+from datetime import date, timedelta
 from textual.widgets import Input, ListView
 
 from todo_tui.app import TodoApp
@@ -30,6 +31,7 @@ def test_app_has_bindings(app):
     assert "q" in binding_keys  # quit
     assert "space" in binding_keys  # toggle
     assert "d" in binding_keys  # delete
+    assert "p" in binding_keys  # postpone
 
 
 @pytest.mark.asyncio
@@ -114,3 +116,70 @@ async def test_app_delete_todo(app):
         assert len(app.todos) == 0
         todos = app.storage.get_all()
         assert len(todos) == 0
+
+
+@pytest.mark.asyncio
+async def test_app_postpone_todo(app):
+    """Test postponing a todo until tomorrow."""
+    # Add a todo first
+    todo = TodoItem(title="Test task")
+    app.storage.add(todo)
+    
+    async with app.run_test() as pilot:
+        app.load_todos()
+        
+        # Get the list view and select first item
+        list_view = app.query_one("#todo-list", ListView)
+        list_view.index = 0
+        
+        # Postpone the todo
+        await pilot.press("p")
+        
+        # Check that todo was postponed
+        todos = app.storage.get_all()
+        assert todos[0].postpone_until is not None
+        assert todos[0].postpone_until == date.today() + timedelta(days=1)
+        assert todos[0].is_postponed() is True
+
+
+@pytest.mark.asyncio
+async def test_app_postpone_multiple_times(app):
+    """Test postponing a todo multiple times.
+    
+    Each postpone sets the date to tomorrow from today,
+    not progressively advancing.
+    """
+    # Add a todo first
+    todo = TodoItem(title="Test task")
+    app.storage.add(todo)
+    
+    async with app.run_test() as pilot:
+        app.load_todos()
+        
+        # Get the list view and select first item
+        list_view = app.query_one("#todo-list", ListView)
+        list_view.index = 0
+        
+        # Postpone the todo twice
+        await pilot.press("p")
+        await pilot.press("p")
+        
+        # Check that todo is still postponed to tomorrow (not day after tomorrow)
+        todos = app.storage.get_all()
+        assert todos[0].postpone_until == date.today() + timedelta(days=1)
+
+
+@pytest.mark.asyncio
+async def test_app_postponed_todo_displayed(app):
+    """Test that postponed todos are displayed with indicator."""
+    # Add and postpone a todo
+    todo = TodoItem(title="Test task")
+    todo.postpone_until_tomorrow()
+    app.storage.add(todo)
+    
+    async with app.run_test() as pilot:
+        app.load_todos()
+        
+        # Check that todo is in the list
+        assert len(app.todos) == 1
+        assert app.todos[0].is_postponed() is True
