@@ -45,12 +45,12 @@ class TodoItem:
         """Check if the TODO item is currently postponed.
         
         Returns:
-            True if the item is postponed and the postpone date is in the future,
+            True if the item is postponed and the postpone date is today or in the future,
             False otherwise.
         """
         if self.postpone_until is None:
             return False
-        return self.postpone_until > date.today()
+        return self.postpone_until >= date.today()
     
     def clear_postpone(self) -> None:
         """Clear the postpone date."""

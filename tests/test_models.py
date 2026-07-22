@@ -93,9 +93,9 @@ def test_todo_item_is_postponed_past_date():
     todo.postpone_until = date.today() - timedelta(days=1)
     assert todo.is_postponed() is False
     
-    # Set postpone date to today
+    # Set postpone date to today - should be considered postponed
     todo.postpone_until = date.today()
-    assert todo.is_postponed() is False
+    assert todo.is_postponed() is True
     
     # Set postpone date to tomorrow
     todo.postpone_until = date.today() + timedelta(days=1)
