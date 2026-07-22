@@ -47,47 +47,107 @@ class TodoApp(App):
     """A Textual app for managing TODO items."""
     
     CSS = """
+    /* 🎨 Vibrant Neon Cyberpunk Theme 🎨 */
+    
     Screen {
-        background: $surface;
+        background: #0a0e27;  /* Deep midnight blue */
+    }
+    
+    Header {
+        background: linear-gradient(90deg, #ff006e 0%, #8338ec 50%, #3a86ff 100%);
+        color: #ffffff;
+        text-style: bold;
     }
     
     #todo-container {
         height: 100%;
-        border: solid $primary;
+        border: heavy #ff006e;  /* Hot pink border */
+        background: #1a1f3a;  /* Slightly lighter midnight */
     }
     
     #todo-list {
         height: 1fr;
-        border: solid $accent;
+        border: round #3a86ff;  /* Electric blue border */
         margin: 1;
+        background: #0f1425;  /* Very dark blue-black */
     }
     
     #input-container {
         height: auto;
         padding: 1;
-        background: $panel;
+        background: linear-gradient(135deg, #240046 0%, #10002b 100%);  /* Deep purple gradient */
+        border: solid #8338ec;  /* Purple border */
     }
     
     Input {
         margin: 0 1;
+        border: solid #06ffa5;  /* Neon green border */
+        background: #1a1f3a;
+        color: #06ffa5;  /* Neon green text */
+    }
+    
+    Input:focus {
+        border: heavy #ff006e;  /* Hot pink when focused */
+        background: #240046;
+    }
+    
+    Input > .input--placeholder {
+        color: #7209b7;  /* Purple placeholder */
+        text-style: italic;
+    }
+    
+    Static {
+        color: #ff006e;  /* Hot pink labels */
+        text-style: bold;
     }
     
     ListView {
         height: 100%;
+        background: #0f1425;
+    }
+    
+    ListView > ListItem {
+        background: #1a1f3a;
+        color: #06ffa5;  /* Neon green text */
+        padding: 0 2;
+    }
+    
+    ListView > ListItem:hover {
+        background: #240046;  /* Purple hover */
+        color: #ffbe0b;  /* Golden yellow on hover */
+    }
+    
+    ListView > ListItem.--highlight {
+        background: linear-gradient(90deg, #8338ec 0%, #3a86ff 100%);  /* Purple to blue gradient */
+        color: #ffffff;
+        text-style: bold;
     }
     
     .dim {
-        color: $text-muted;
-        text-style: dim;
+        color: #7209b7;  /* Purple for completed */
+        text-style: dim strikethrough;
     }
     
     .postponed {
-        color: $warning;
-        text-style: italic;
+        color: #ffbe0b;  /* Golden yellow for postponed */
+        text-style: italic bold;
+        background: #3a0f51;  /* Dark purple background */
     }
     
     Footer {
-        background: $panel;
+        background: linear-gradient(90deg, #3a86ff 0%, #8338ec 50%, #ff006e 100%);
+        color: #ffffff;
+    }
+    
+    Footer > .footer--key {
+        background: #06ffa5;  /* Neon green key backgrounds */
+        color: #0a0e27;  /* Dark text */
+        text-style: bold;
+    }
+    
+    Footer > .footer--description {
+        color: #ffffff;
+        text-style: italic;
     }
     """
     
@@ -110,13 +170,13 @@ class TodoApp(App):
         with Container(id="todo-container"):
             yield ListView(id="todo-list")
             with Vertical(id="input-container"):
-                yield Static("Add new TODO:")
+                yield Static("✨ Add new TODO ✨")
                 yield Input(placeholder="Enter a new task...", id="todo-input")
         yield Footer()
     
     def on_mount(self) -> None:
         """Load todos when the app starts."""
-        self.title = "TODO TUI App"
+        self.title = "✨ TODO TUI App ✨"
         self.load_todos()
     
     def load_todos(self) -> None:
