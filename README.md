@@ -13,10 +13,10 @@ A simple, interactive TODO list application with a Text User Interface (TUI) bui
 - ⌨️ Keyboard-driven interface with **customizable key bindings**
 - 🎨 Clean, modern TUI design
 - 🚀 Fast and lightweight
-- ❓ Built-in keyboard shortcuts reference (press `?`)
-- 📄 Export shortcuts as a print-friendly cheat sheet
-- 🎓 Interactive tutorial for new users
-- ⚙️ Fully customizable key bindings
+- ❓ Interactive help system with searchable keyboard shortcuts
+- 📄 Export shortcuts reference to Markdown
+- 🎓 **In-app tutorial for new users**
+- ⚙️ **Customizable settings** with persistent storage
 
 ## Requirements
 
@@ -61,13 +61,11 @@ Start the TODO TUI app:
 uv run todo-tui
 ```
 
-### First-Time Experience
-
-When you run the app for the first time, you'll see an interactive tutorial that guides you through the basic features. You can:
-- Skip the tutorial and start using the app immediately
-- Return to the tutorial anytime by pressing `Ctrl+T`
+On first launch, you'll see an interactive tutorial that walks you through all the features!
 
 ### Keyboard Shortcuts
+
+The app uses intuitive keyboard shortcuts (which you can customize!):
 
 | Key | Action |
 |-----|--------|
@@ -77,68 +75,62 @@ When you run the app for the first time, you'll see an interactive tutorial that
 | `Space` | Toggle TODO completion status |
 | `p` | Postpone selected TODO until tomorrow |
 | `d` | Delete selected TODO |
-| `?` | Show keyboard shortcuts reference |
-| `c` | Customize key bindings |
-| `Ctrl+E` | Export shortcuts cheat sheet |
-| `Ctrl+T` | Show tutorial |
+| `?` | Show keyboard shortcuts help (with search!) |
 | `q` | Quit application |
 
-**Note**: All keyboard shortcuts are customizable! Press `c` to configure your preferred key bindings.
+#### Help Dialog Shortcuts
 
-### Keyboard Shortcuts Reference
+When the help dialog is open (`?`):
 
-The app includes a comprehensive help system accessible by pressing `?`:
+| Key | Action |
+|-----|--------|
+| `/` | Focus search box to filter shortcuts |
+| `Ctrl+E` | Export shortcuts to Markdown file |
+| `Esc` | Close help dialog |
 
-#### Features:
-- **Organized shortcuts**: All shortcuts grouped by category (Navigation, Task Management, Application, Tips)
-- **Real-time search**: Type to filter shortcuts and quickly find what you need
-- **Export functionality**: Click "Export Cheat Sheet" to save a print-friendly reference
-- **Always up-to-date**: Shows your current key bindings (including customizations)
-- **Easy to close**: Press `ESC`, `q`, or `?` again to close
+> **Tip**: Press `?` anytime to open the interactive help dialog. You can search shortcuts using `/`, and even export them to a Markdown file for reference!
 
-### Customizing Key Bindings
+### Customizable Key Bindings
 
-Press `c` to open the key bindings customization screen:
+**NEW!** You can now customize keyboard shortcuts to match your preferences:
 
-1. **View current bindings**: See all actions and their assigned keys
-2. **Modify bindings**: Click on an input field and type your desired key, then press Enter
-   - Use standard key names like `space`, `ctrl+e`, `shift+a`, etc.
-   - Changes are saved when you press Enter or close the screen
-3. **Reset to defaults**: Click "Reset to Defaults" to restore original bindings
-4. **Close**: Click "Close" or press `ESC` when done
+1. Key bindings are automatically saved to `~/.todo-tui-keybindings.json`
+2. Customize bindings programmatically (see examples below)
+3. Reset to defaults anytime
+4. All customizations persist across app restarts
 
-Your custom bindings are saved to `~/.todo-tui-config.json` and persist across sessions.
+### Tutorial for New Users
 
-### Exporting Shortcuts Cheat Sheet
+**NEW!** First-time users are greeted with an interactive tutorial that covers:
 
-Need a quick reference or want to print the shortcuts?
+- 📝 Adding and managing tasks
+- ✓ Marking tasks as complete
+- ⏰ Postponing tasks
+- ❓ Using the help system
+- 💡 Pro tips for power users
 
-1. **From help screen**: Press `?`, then click "Export Cheat Sheet"
-2. **Direct export**: Press `Ctrl+E` anytime
-3. **File location**: Shortcuts are saved to `~/todo-tui-shortcuts.txt`
-4. **Print-friendly**: Plain text format, organized by category, ready to print
-
-The cheat sheet includes all current bindings (including your customizations) and tips for using the app.
-
-### Tutorial
-
-The interactive tutorial helps you get started:
-
-- **First time**: Automatically shown when you first run the app
-- **Anytime access**: Press `Ctrl+T` to show the tutorial again
-- **Covers**: Adding tasks, managing tasks, essential shortcuts, and pro tips
-- **Quick start**: Step-by-step guide with examples
+The tutorial only shows once. To see it again, delete `~/.todo-tui-tutorial-shown`.
 
 ### Basic Workflow
 
-1. **Add a TODO**: Press `Tab` to focus the input field, type your task, and press `Enter`
-2. **Complete a TODO**: Navigate to the item and press `Space`
-3. **Postpone a TODO**: Navigate to the item and press `p` to postpone it until tomorrow
-4. **Delete a TODO**: Navigate to the item and press `d`
-5. **Get Help**: Press `?` to see all keyboard shortcuts with search
-6. **Customize Keys**: Press `c` to configure your preferred bindings
-7. **Export Shortcuts**: Press `Ctrl+E` to save a cheat sheet
+1. **First Run**: Follow the interactive tutorial to learn the basics
+2. **Add a TODO**: Press `Tab` to focus the input field, type your task, and press `Enter`
+3. **Complete a TODO**: Navigate to the item and press `Space`
+4. **Postpone a TODO**: Navigate to the item and press `p` to postpone it until tomorrow
+5. **Delete a TODO**: Navigate to the item and press `d`
+6. **Get Help**: Press `?` to view all keyboard shortcuts with descriptions
+7. **Customize**: Modify key bindings to suit your workflow
 8. **Exit**: Press `q` to quit (your data is automatically saved)
+
+### Help System
+
+The app includes a comprehensive help system accessible by pressing `?`:
+
+- **Searchable Shortcuts**: Press `/` or type in the search box to filter shortcuts by key, action, or description
+- **Categorized Reference**: Shortcuts organized by category (Navigation, Task Management, etc.)
+- **Export to File**: Press `Ctrl+E` in the help dialog to export all shortcuts to `~/todo-tui-shortcuts.md`
+- **Print-Friendly**: The exported Markdown file is formatted for easy printing or sharing
+- **Shows Custom Bindings**: The help system reflects your customized key bindings
 
 ### Postponing TODOs
 
@@ -146,13 +138,17 @@ The postpone feature allows you to defer tasks until tomorrow:
 
 - Press `p` on any TODO item to postpone it until tomorrow
 - Postponed items are displayed with a `[postponed until YYYY-MM-DD]` indicator
-- Postponed items remain visible in the list with an italic, yellow style
+- Postponed items remain visible in the list with an italic style
 - Pressing `p` multiple times keeps the postpone date as tomorrow (it doesn't advance further)
 - Postponed items automatically become active again after the postpone date passes
 
 ## Data Storage
 
-TODO items are automatically saved to `~/.todo-tui.json` in your home directory. Configuration (including custom key bindings and tutorial status) is saved to `~/.todo-tui-config.json`. All data persists between sessions, so you can safely close and reopen the app without losing anything.
+- **TODO items**: Automatically saved to `~/.todo-tui.json`
+- **Key bindings**: Saved to `~/.todo-tui-keybindings.json`
+- **Tutorial flag**: `~/.todo-tui-tutorial-shown` (tracks first run)
+
+All data persists between sessions, so you can safely close and reopen the app.
 
 ## Development
 
@@ -170,28 +166,44 @@ Run tests with coverage:
 uv run pytest --cov=todo_tui --cov-report=html
 ```
 
+Run specific test files:
+
+```bash
+uv run pytest tests/test_keybindings.py
+uv run pytest tests/test_tutorial.py
+uv run pytest tests/test_settings_dialog.py
+```
+
 ### Project Structure
 
 ```
 todo-tui/
 ├── src/
 │   └── todo_tui/
-│       ├── __init__.py       # Package initialization
-│       ├── app.py            # Main Textual application
-│       ├── models.py         # Data models (TodoItem)
-│       ├── storage.py        # Persistence layer
-│       └── config.py         # Configuration management
+│       ├── __init__.py           # Package initialization
+│       ├── app.py                # Main Textual application
+│       ├── models.py             # Data models (TodoItem)
+│       ├── storage.py            # Persistence layer
+│       ├── keybindings.py        # Key bindings management
+│       ├── help_dialog.py        # Keyboard shortcuts help dialog
+│       ├── tutorial.py           # Tutorial screen for new users
+│       └── settings_dialog.py    # Settings dialog for customization
 ├── tests/
-│   ├── test_models.py        # Model tests
-│   ├── test_storage.py       # Storage tests
-│   ├── test_app.py           # App tests
-│   └── test_config.py        # Config tests
+│   ├── test_models.py            # Model tests
+│   ├── test_storage.py           # Storage tests
+│   ├── test_app.py               # App tests
+│   ├── test_help_dialog.py       # Help dialog tests
+│   ├── test_keybindings.py       # Key bindings tests
+│   ├── test_tutorial.py          # Tutorial tests
+│   └── test_settings_dialog.py   # Settings dialog tests
 ├── examples/
-│   ├── basic_usage.py        # Basic usage example
-│   └── help_usage.py         # Help feature demo
-├── pyproject.toml            # Project configuration
-├── README.md                 # This file
-└── SPEC.md                   # Design specification
+│   ├── basic_usage.py            # Basic usage examples
+│   ├── advanced_usage.py         # Advanced usage examples
+│   ├── help_system_demo.py       # Help system demonstration
+│   └── custom_keybindings.py     # Key binding customization examples
+├── pyproject.toml                # Project configuration
+├── README.md                     # This file
+└── SPEC.md                       # Design specification
 ```
 
 ### Code Style
@@ -207,7 +219,9 @@ Check out the `examples/` directory for usage examples:
 
 ```bash
 python examples/basic_usage.py
-python examples/help_usage.py
+python examples/advanced_usage.py
+python examples/help_system_demo.py
+python examples/custom_keybindings.py
 ```
 
 ## Troubleshooting
@@ -220,9 +234,14 @@ python examples/help_usage.py
 ### Data file issues
 
 - The data file is located at `~/.todo-tui.json`
-- The config file is located at `~/.todo-tui-config.json`
-- If corrupted, you can delete them (you'll lose your TODOs and settings)
-- The app will create new files on next run
+- If corrupted, you can delete it (you'll lose your TODOs)
+- The app will create a new file on next run
+
+### Key binding issues
+
+- Key bindings are stored in `~/.todo-tui-keybindings.json`
+- Delete this file to reset to defaults
+- See `examples/custom_keybindings.py` for customization examples
 
 ### Terminal display issues
 
@@ -230,18 +249,19 @@ python examples/help_usage.py
 - Try a different terminal emulator if problems persist
 - Minimum terminal size: 80x24 characters
 
-### Key binding conflicts
+### Tutorial not showing
 
-- If a key binding doesn't work, it might conflict with your terminal
-- Press `c` to customize the binding to a different key
-- Press "Reset to Defaults" in the customize screen if needed
+- The tutorial only shows on first launch
+- Delete `~/.todo-tui-tutorial-shown` to see it again
+- Or run `python examples/custom_keybindings.py` to see tutorial demo
 
-### Need help?
+### Help system not showing
 
-- Press `?` inside the app to see all available shortcuts
-- Press `Ctrl+T` to see the tutorial again
-- Use the search feature in help to quickly find specific commands
-- Export a cheat sheet with `Ctrl+E` for quick reference
+- Ensure you're pressing `Shift+/` (question mark) to open help
+- Try pressing `?` with or without Shift depending on your keyboard layout
+- The help dialog opens as a modal overlay
+- Press `/` inside the help dialog to search for shortcuts
+- Press `Ctrl+E` inside the help dialog to export shortcuts
 
 ## Contributing
 
@@ -257,6 +277,7 @@ Contributions are welcome! Please:
 
 - [SPEC.md](SPEC.md) - Detailed design decisions and specifications
 - [Textual Documentation](https://textual.textualize.io/) - Framework documentation
+- Keyboard Shortcuts - Press `?` in the app or export to Markdown
 
 ## License
 
@@ -269,8 +290,15 @@ MIT License - see LICENSE file for details
 
 ## Roadmap
 
-See [SPEC.md](SPEC.md) for planned features and enhancements.
+See [SPEC.md](SPEC.md) and [IMPROVEMENTS_PROPOSAL.md](IMPROVEMENTS_PROPOSAL.md) for planned features and enhancements.
 
----
+## Recent Updates
 
-**Quick Win Feature**: This comprehensive keyboard shortcuts reference system was identified as a "Quick Win" in the improvements proposal - providing immediate value with relatively low implementation complexity.
+### Version 2.0 - Keyboard Shortcuts Reference
+
+- ✨ **Interactive Tutorial**: New users get a guided tour
+- ⌨️ **Customizable Key Bindings**: Personalize shortcuts to your liking
+- 💾 **Persistent Settings**: All customizations save automatically
+- 📖 **Enhanced Help System**: Now shows your custom bindings
+- 🔍 **Searchable Shortcuts**: Find any command instantly
+- 📄 **Export Reference**: Create printable cheat sheets
