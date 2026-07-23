@@ -148,10 +148,11 @@ def test_storage_corrupted_file():
 
 def test_export_json(temp_storage):
     """Test exporting todos to JSON format."""
-    todos = [
-        TodoItem(title="Task 1"),
-        TodoItem(title="Task 2", completed=True),
-    ]
+    todo1 = TodoItem(title="Task 1")
+    todo2 = TodoItem(title="Task 2")
+    todo2.toggle_completed()
+    
+    todos = [todo1, todo2]
     temp_storage.save(todos)
     
     # Export to JSON
@@ -197,10 +198,11 @@ def test_export_json_with_custom_todos(temp_storage):
 
 def test_export_csv(temp_storage):
     """Test exporting todos to CSV format."""
-    todos = [
-        TodoItem(title="Task 1"),
-        TodoItem(title="Task 2", completed=True),
-    ]
+    todo1 = TodoItem(title="Task 1")
+    todo2 = TodoItem(title="Task 2")
+    todo2.toggle_completed()
+    
+    todos = [todo1, todo2]
     temp_storage.save(todos)
     
     # Export to CSV
@@ -232,7 +234,6 @@ def test_export_csv(temp_storage):
 def test_export_markdown(temp_storage):
     """Test exporting todos to Markdown format."""
     now = datetime.now()
-    completed_time = now - timedelta(hours=1)
     
     todos = [
         TodoItem(title="Active task 1", created_at=now),
