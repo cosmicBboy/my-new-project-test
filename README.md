@@ -10,6 +10,8 @@ A simple, interactive TODO list application with a Text User Interface (TUI) bui
 - 📝 Add, complete, and delete TODO items
 - ⏰ Postpone TODO items until tomorrow
 - 💾 Automatic persistence (data saved between sessions)
+- 📤 Export TODO items (JSON, CSV, Markdown formats)
+- 📥 Import TODO items (JSON format with merge/replace modes)
 - ⌨️ Keyboard-driven interface
 - 🎨 Clean, modern TUI design
 - 🚀 Fast and lightweight
@@ -67,6 +69,8 @@ uv run todo-tui
 | `Space` | Toggle TODO completion status |
 | `p` | Postpone selected TODO until tomorrow |
 | `d` | Delete selected TODO |
+| `e` | Export TODO items |
+| `i` | Import TODO items |
 | `q` | Quit application |
 
 ### Basic Workflow
@@ -75,7 +79,9 @@ uv run todo-tui
 2. **Complete a TODO**: Navigate to the item and press `Space`
 3. **Postpone a TODO**: Navigate to the item and press `p` to postpone it until tomorrow
 4. **Delete a TODO**: Navigate to the item and press `d`
-5. **Exit**: Press `q` to quit (your data is automatically saved)
+5. **Export TODOs**: Press `e` to open the export dialog
+6. **Import TODOs**: Press `i` to open the import dialog
+7. **Exit**: Press `q` to quit (your data is automatically saved)
 
 ### Postponing TODOs
 
@@ -86,6 +92,43 @@ The postpone feature allows you to defer tasks until tomorrow:
 - Postponed items remain visible in the list with an italic style
 - Pressing `p` multiple times keeps the postpone date as tomorrow (it doesn't advance further)
 - Postponed items automatically become active again after the postpone date passes
+
+### Export and Import
+
+#### Exporting TODO Items
+
+Export your TODO list to make backups or share with others:
+
+1. Press `e` to open the export dialog
+2. Enter the export path with desired format:
+   - `~/todos.json` - Export as JSON (preserves all data)
+   - `~/todos.csv` - Export as CSV (spreadsheet-compatible)
+   - `~/todos.md` - Export as Markdown (human-readable)
+3. Press `Enter` to export, or `Esc` to cancel
+
+**Export Formats:**
+
+- **JSON**: Full data export including IDs, timestamps, and all metadata. Best for backups and importing.
+- **CSV**: Spreadsheet-friendly format. Can be opened in Excel, Google Sheets, etc.
+- **Markdown**: Human-readable checklist format. Great for documentation or sharing.
+
+#### Importing TODO Items
+
+Import TODO items from a JSON file:
+
+1. Press `i` to open the import dialog
+2. Enter the path to your JSON file (e.g., `~/todos.json`)
+3. Choose import mode:
+   - **Replace mode** (default): Replaces all existing TODOs with imported ones
+   - **Merge mode** (press `Ctrl+M` to toggle): Adds imported TODOs to existing ones, skipping duplicates
+4. Press `Enter` to import, or `Esc` to cancel
+
+**Import Modes:**
+
+- **Replace**: Use when restoring from a backup or starting fresh
+- **Merge**: Use when combining TODO lists from multiple sources
+
+**Note**: Only JSON format is supported for imports to preserve all TODO metadata.
 
 ## Data Storage
 
@@ -155,6 +198,12 @@ python examples/basic_usage.py
 - The data file is located at `~/.todo-tui.json`
 - If corrupted, you can delete it (you'll lose your TODOs)
 - The app will create a new file on next run
+
+### Export/Import issues
+
+- Ensure you have write permissions for the export directory
+- For imports, verify the JSON file is valid (you can test with `cat file.json | python -m json.tool`)
+- Use absolute paths or `~` for home directory (e.g., `~/todos.json`)
 
 ### Terminal display issues
 
