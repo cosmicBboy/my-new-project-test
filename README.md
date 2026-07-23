@@ -11,7 +11,10 @@ A simple, interactive TODO list application with a Text User Interface (TUI) bui
 - ⏰ Postpone TODO items until tomorrow
 - 💾 Automatic persistence (data saved between sessions)
 - ⌨️ Keyboard-driven interface
-- 🎨 Clean, modern TUI design
+- 🎨 Customizable themes with 5 built-in presets
+- 🔤 Adjustable font sizes (small, medium, large)
+- 📐 Layout options (compact, comfortable, spacious)
+- ♿ High contrast mode for accessibility
 - 🚀 Fast and lightweight
 
 ## Requirements
@@ -59,6 +62,7 @@ uv run todo-tui
 
 ### Keyboard Shortcuts
 
+#### Basic Operations
 | Key | Action |
 |-----|--------|
 | `↑` / `↓` | Navigate through TODO items |
@@ -68,6 +72,13 @@ uv run todo-tui
 | `p` | Postpone selected TODO until tomorrow |
 | `d` | Delete selected TODO |
 | `q` | Quit application |
+
+#### Customization
+| Key | Action |
+|-----|--------|
+| `t` | Cycle through themes |
+| `f` | Cycle through font sizes |
+| `l` | Cycle through layout spacing |
 
 ### Basic Workflow
 
@@ -87,9 +98,55 @@ The postpone feature allows you to defer tasks until tomorrow:
 - Pressing `p` multiple times keeps the postpone date as tomorrow (it doesn't advance further)
 - Postponed items automatically become active again after the postpone date passes
 
+## Themes
+
+The app includes 5 beautiful built-in themes that you can switch between instantly:
+
+### Available Themes
+
+1. **Cyberpunk** (Default) - Neon colors with hot pink, cyan, and purple accents
+2. **Dark** - Professional dark theme with soft, muted colors
+3. **Light** - Clean light theme perfect for bright environments
+4. **High Contrast** - Maximum contrast with pure black/white for accessibility
+5. **Colorful** - Vibrant theme with gradients and pastel accents
+
+### Theme Customization
+
+- Press `t` to cycle through themes
+- Press `f` to cycle through font sizes (small, medium, large)
+- Press `l` to cycle through layouts (compact, comfortable, spacious)
+- Your preferences are automatically saved and restored on next launch
+
+### Theme Examples
+
+**Dark Theme**: Professional and easy on the eyes
+```
+Background: #1e1e1e | Foreground: #d4d4d4
+Perfect for long coding sessions
+```
+
+**Light Theme**: Clean and bright
+```
+Background: #ffffff | Foreground: #24292f
+Ideal for well-lit environments
+```
+
+**High Contrast**: Maximum visibility
+```
+Background: #000000 | Foreground: #ffffff
+Designed for accessibility and outdoor use
+```
+
 ## Data Storage
 
+### TODO Items
 TODO items are automatically saved to `~/.todo-tui.json` in your home directory. The data persists between sessions, so you can safely close and reopen the app without losing your tasks.
+
+### Theme Preferences
+Theme and customization preferences are saved to `~/.todo-tui-config.json`. This includes:
+- Selected theme preset
+- Font size preference
+- Layout spacing preference
 
 ## Development
 
@@ -116,13 +173,19 @@ todo-tui/
 │       ├── __init__.py       # Package initialization
 │       ├── app.py            # Main Textual application
 │       ├── models.py         # Data models (TodoItem)
-│       └── storage.py        # Persistence layer
+│       ├── storage.py        # Persistence layer
+│       ├── themes.py         # Theme system and presets
+│       └── config.py         # Configuration management
 ├── tests/
 │   ├── test_models.py        # Model tests
 │   ├── test_storage.py       # Storage tests
-│   └── test_app.py           # App tests
+│   ├── test_app.py           # App tests
+│   ├── test_themes.py        # Theme tests
+│   └── test_config.py        # Config tests
 ├── examples/
-│   └── basic_usage.py        # Usage examples
+│   ├── basic_usage.py        # Basic usage examples
+│   ├── advanced_usage.py     # Advanced features
+│   └── theme_usage.py        # Theme customization examples
 ├── pyproject.toml            # Project configuration
 ├── README.md                 # This file
 └── SPEC.md                   # Design specification
@@ -140,8 +203,25 @@ The project follows:
 Check out the `examples/` directory for usage examples:
 
 ```bash
+# Basic usage and models
 python examples/basic_usage.py
+
+# Theme customization
+python examples/theme_usage.py
+
+# Advanced features
+python examples/advanced_usage.py
 ```
+
+## Accessibility
+
+The app is designed with accessibility in mind:
+
+- **High Contrast Theme**: Pure black and white colors for maximum visibility
+- **Keyboard-Only Navigation**: No mouse required
+- **Clear Visual Indicators**: Status symbols and color coding
+- **Adjustable Layouts**: Choose spacing that works for you
+- **Screen Reader Compatible**: Textual framework supports screen readers
 
 ## Troubleshooting
 
@@ -152,15 +232,23 @@ python examples/basic_usage.py
 
 ### Data file issues
 
-- The data file is located at `~/.todo-tui.json`
-- If corrupted, you can delete it (you'll lose your TODOs)
-- The app will create a new file on next run
+- TODO data file: `~/.todo-tui.json`
+- Config file: `~/.todo-tui-config.json`
+- If corrupted, you can delete them (you'll lose your data/preferences)
+- The app will create new files on next run
 
 ### Terminal display issues
 
 - Ensure your terminal supports Unicode characters
 - Try a different terminal emulator if problems persist
 - Minimum terminal size: 80x24 characters
+- Some themes may look different depending on terminal color support
+
+### Theme not displaying correctly
+
+- Some terminal emulators have limited color support
+- Try the High Contrast theme if colors aren't showing
+- Modern terminals like iTerm2, Windows Terminal, or Alacritty work best
 
 ## Contributing
 
@@ -175,6 +263,7 @@ Contributions are welcome! Please:
 ## Documentation
 
 - [SPEC.md](SPEC.md) - Detailed design decisions and specifications
+- [IMPROVEMENTS_PROPOSAL.md](IMPROVEMENTS_PROPOSAL.md) - Feature roadmap
 - [Textual Documentation](https://textual.textualize.io/) - Framework documentation
 
 ## License
@@ -185,7 +274,23 @@ MIT License - see LICENSE file for details
 
 - Built with [Textual](https://textual.textualize.io/) by Textualize.io
 - Managed with [uv](https://github.com/astral-sh/uv) by Astral
+- Theme system inspired by popular code editors and terminals
 
 ## Roadmap
 
-See [SPEC.md](SPEC.md) for planned features and enhancements.
+See [IMPROVEMENTS_PROPOSAL.md](IMPROVEMENTS_PROPOSAL.md) for planned features and enhancements, including:
+
+- ✅ **Customizable Themes** (Completed in Phase 4)
+- Tags and categories
+- Priority levels
+- Due dates and time tracking
+- Advanced search and filtering
+- And much more!
+
+## Support
+
+If you encounter issues or have questions:
+
+1. Check the troubleshooting section above
+2. Review the examples in the `examples/` directory
+3. Open an issue on GitHub with details about your environment and the problem

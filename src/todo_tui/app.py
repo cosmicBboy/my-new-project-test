@@ -8,6 +8,8 @@ from textual.message import Message
 
 from .models import TodoItem
 from .storage import TodoStorage
+from .config import Config
+from .themes import generate_css
 
 
 class TodoListItem(ListItem):
@@ -46,123 +48,27 @@ class TodoListItem(ListItem):
 class TodoApp(App):
     """A Textual app for managing TODO items."""
     
-    CSS = """
-    /* 🎨 Vibrant Neon Cyberpunk Theme 🎨 */
-    
-    Screen {
-        background: #0a0e27;  /* Deep midnight blue */
-    }
-    
-    Header {
-        background: linear-gradient(90deg, #ff006e 0%, #8338ec 50%, #3a86ff 100%);
-        color: #ffffff;
-        text-style: bold;
-    }
-    
-    #todo-container {
-        height: 100%;
-        border: heavy #ff006e;  /* Hot pink border */
-        background: #1a1f3a;  /* Slightly lighter midnight */
-    }
-    
-    #todo-list {
-        height: 1fr;
-        border: round #3a86ff;  /* Electric blue border */
-        margin: 1;
-        background: #0f1425;  /* Very dark blue-black */
-    }
-    
-    #input-container {
-        height: auto;
-        padding: 1;
-        background: linear-gradient(135deg, #240046 0%, #10002b 100%);  /* Deep purple gradient */
-        border: solid #8338ec;  /* Purple border */
-    }
-    
-    Input {
-        margin: 0 1;
-        border: solid #06ffa5;  /* Neon green border */
-        background: #1a1f3a;
-        color: #06ffa5;  /* Neon green text */
-    }
-    
-    Input:focus {
-        border: heavy #ff006e;  /* Hot pink when focused */
-        background: #240046;
-    }
-    
-    Input > .input--placeholder {
-        color: #7209b7;  /* Purple placeholder */
-        text-style: italic;
-    }
-    
-    Static {
-        color: #ff006e;  /* Hot pink labels */
-        text-style: bold;
-    }
-    
-    ListView {
-        height: 100%;
-        background: #0f1425;
-    }
-    
-    ListView > ListItem {
-        background: #1a1f3a;
-        color: #06ffa5;  /* Neon green text */
-        padding: 0 2;
-    }
-    
-    ListView > ListItem:hover {
-        background: #240046;  /* Purple hover */
-        color: #ffbe0b;  /* Golden yellow on hover */
-    }
-    
-    ListView > ListItem.--highlight {
-        background: linear-gradient(90deg, #8338ec 0%, #3a86ff 100%);  /* Purple to blue gradient */
-        color: #ffffff;
-        text-style: bold;
-    }
-    
-    .dim {
-        color: #7209b7;  /* Purple for completed */
-        text-style: dim strikethrough;
-    }
-    
-    .postponed {
-        color: #ffbe0b;  /* Golden yellow for postponed */
-        text-style: italic bold;
-        background: #3a0f51;  /* Dark purple background */
-    }
-    
-    Footer {
-        background: linear-gradient(90deg, #3a86ff 0%, #8338ec 50%, #ff006e 100%);
-        color: #ffffff;
-    }
-    
-    Footer > .footer--key {
-        background: #06ffa5;  /* Neon green key backgrounds */
-        color: #0a0e27;  /* Dark text */
-        text-style: bold;
-    }
-    
-    Footer > .footer--description {
-        color: #ffffff;
-        text-style: italic;
-    }
-    """
-    
     BINDINGS = [
         Binding("q", "quit", "Quit", priority=True),
         Binding("space", "toggle_todo", "Toggle", show=True),
         Binding("d", "delete_todo", "Delete", show=True),
         Binding("p", "postpone_todo", "Postpone", show=True),
+        Binding("t", "cycle_theme", "Theme", show=True),
+        Binding("f", "cycle_font_size", "Font", show=False),
+        Binding("l", "cycle_layout", "Layout", show=False),
     ]
     
     def __init__(self):
         """Initialize the TODO app."""
         super().__init__()
         self.storage = TodoStorage()
+        self.config = Config()
         self.todos: list[TodoItem] = []
+    
+    @property
+    def CSS(self) -> str:
+        """Generate CSS based on current theme."""
+        return generate_css(self.config.theme)
     
     def compose(self) -> ComposeResult:
         """Compose the app layout."""
@@ -176,8 +82,13 @@ class TodoApp(App):
     
     def on_mount(self) -> None:
         """Load todos when the app starts."""
-        self.title = "✨ TODO TUI App ✨"
+        self._update_title()
         self.load_todos()
+    
+    def _update_title(self) -> None:
+        """Update the app title to include theme info."""
+        theme_name = self.config.theme.name
+        self.title = f"✨ TODO TUI App - {theme_name} Theme ✨"
     
     def load_todos(self) -> None:
         """Load todos from storage and display them."""
@@ -258,6 +169,34 @@ class TodoApp(App):
                 self.notify(f"Postponed until {todo.postpone_until}", timeout=2)
             except Exception as e:
                 self.notify(f"Error postponing todo: {e}", severity="error")
+    
+    def action_cycle_theme(self) -> None:
+        """Cycle to the next theme."""
+        new_theme = self.config.cycle_theme()
+        # Refresh CSS by reloading
+        self.refresh_css()
+        self._update_title()
+        self.notify(
+            f"Theme: {new_theme.name} | Press 't' to cycle | 'f' for font | 'l' for layout",
+            timeout=3
+        )
+    
+    def action_cycle_font_size(self) -> None:
+        """Cycle to the next font size."""
+        new_size = self.config.cycle_font_size()
+        self.refresh_css()
+        self.notify(f"Font size: {new_size.value}", timeout=2)
+    
+    def action_cycle_layout(self) -> None:
+        """Cycle to the next layout."""
+        new_layout = self.config.cycle_layout()
+        self.refresh_css()
+        self.notify(f"Layout: {new_layout.value}", timeout=2)
+    
+    def refresh_css(self) -> None:
+        """Refresh the app CSS with current theme."""
+        # Force CSS reload by updating the stylesheet
+        self.stylesheet.reparse(self.CSS)
 
 
 def main():
