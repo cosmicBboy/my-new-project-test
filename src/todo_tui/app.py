@@ -1,11 +1,13 @@
 """Main Textual application for the TODO TUI app."""
 
+from typing import Optional
 from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Vertical, VerticalScroll, Horizontal
 from textual.widgets import Header, Footer, Input, Static, ListView, ListItem, Label, Button
 from textual.screen import Screen, ModalScreen
 from textual.message import Message
+from textual.events import Key
 from pathlib import Path
 
 from .models import TodoItem
@@ -314,7 +316,7 @@ class CustomizeKeysScreen(ModalScreen):
         """
         super().__init__()
         self.keybindings = keybindings
-        self.editing_action = None
+        self.editing_action: Optional[str] = None
     
     def compose(self) -> ComposeResult:
         """Compose the customize dialog."""
@@ -457,7 +459,7 @@ class CustomizeKeysScreen(ModalScreen):
         
         self.app.notify(f"Saved: {self.keybindings.get_description(action)} = {display_key}", timeout=3)
     
-    def on_key(self, event) -> None:
+    def on_key(self, event: Key) -> None:
         """Handle key press during editing.
         
         Args:
@@ -970,7 +972,7 @@ class TodoApp(App):
     
     def action_customize_keys(self) -> None:
         """Show the key bindings customization dialog."""
-        def handle_result(refresh: bool | None) -> None:
+        def handle_result(refresh: Optional[bool]) -> None:
             if refresh:
                 self._update_bindings()
         

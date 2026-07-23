@@ -361,7 +361,6 @@ async def test_help_contains_all_main_shortcuts():
     
     # Check for key shortcuts
     shortcut_keys = [key for key, _ in all_shortcuts]
-    shortcut_text = " ".join(shortcut_keys)
     
     # Check main shortcuts are present (key names may vary)
     assert any("space" in s.lower() or "Space" in s for s in shortcut_keys)
@@ -530,25 +529,32 @@ async def test_customize_keys_saves_to_file(tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_export_shortcuts(app, tmp_path):
+async def test_export_shortcuts(app):
     """Test exporting shortcuts cheat sheet."""
-    async with app.run_test() as pilot:
-        # Trigger export
-        await pilot.press("ctrl+e")
-        await pilot.pause()
-        
-        # Check that file was created
-        cheat_sheet_path = Path.home() / "todo-tui-shortcuts.txt"
-        assert cheat_sheet_path.exists()
-        
-        # Check content
-        content = cheat_sheet_path.read_text()
-        assert "Keyboard Shortcuts Cheat Sheet" in content
-        assert "Navigation" in content
-        assert "TODO Management" in content
-        
-        # Cleanup
+    cheat_sheet_path = Path.home() / "todo-tui-shortcuts.txt"
+    
+    # Clean up any existing file first
+    if cheat_sheet_path.exists():
         cheat_sheet_path.unlink()
+    
+    try:
+        async with app.run_test() as pilot:
+            # Trigger export
+            await pilot.press("ctrl+e")
+            await pilot.pause()
+            
+            # Check that file was created
+            assert cheat_sheet_path.exists()
+            
+            # Check content
+            content = cheat_sheet_path.read_text()
+            assert "Keyboard Shortcuts Cheat Sheet" in content
+            assert "Navigation" in content
+            assert "TODO Management" in content
+    finally:
+        # Cleanup - ensure file is removed even if test fails
+        if cheat_sheet_path.exists():
+            cheat_sheet_path.unlink()
 
 
 def test_keybindings_initialization():
