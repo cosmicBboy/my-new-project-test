@@ -8,6 +8,7 @@ A simple, interactive TODO list application with a Text User Interface (TUI) bui
 ## Features
 
 - 📝 Add, complete, and delete TODO items
+- 📖 Rich task descriptions with markdown support
 - ⏰ Postpone TODO items until tomorrow
 - 💾 Automatic persistence (data saved between sessions)
 - ⌨️ Keyboard-driven interface
@@ -67,6 +68,8 @@ uv run todo-tui
 | `Space` | Toggle TODO completion status |
 | `p` | Postpone selected TODO until tomorrow |
 | `d` | Delete selected TODO |
+| `n` | Add or edit description/notes for selected TODO |
+| `v` | View description for selected TODO |
 | `q` | Quit application |
 
 ### Basic Workflow
@@ -74,8 +77,39 @@ uv run todo-tui
 1. **Add a TODO**: Press `Tab` to focus the input field, type your task, and press `Enter`
 2. **Complete a TODO**: Navigate to the item and press `Space`
 3. **Postpone a TODO**: Navigate to the item and press `p` to postpone it until tomorrow
-4. **Delete a TODO**: Navigate to the item and press `d`
-5. **Exit**: Press `q` to quit (your data is automatically saved)
+4. **Add Notes**: Navigate to the item and press `n` to add detailed notes
+5. **View Notes**: Navigate to the item and press `v` to view notes with formatted display
+6. **Delete a TODO**: Navigate to the item and press `d`
+7. **Exit**: Press `q` to quit (your data is automatically saved)
+
+### Rich Task Descriptions
+
+The app supports detailed, multi-line descriptions for each TODO item:
+
+- **Add/Edit Notes**: Press `n` on any TODO to open the description editor
+- **View Notes**: Press `v` to view the formatted description
+- **Markdown Support**: Descriptions support basic markdown formatting:
+  - Headings: `# Heading 1`, `## Heading 2`, `### Heading 3`
+  - Lists: `- Item` or `* Item`
+  - Inline code: `` `code` ``
+  - Links: URLs are automatically detected and made clickable
+- **Indicator**: TODOs with descriptions show a `[+]` indicator in the list
+- **Keyboard Navigation**: In the description editor, use `Ctrl+S` to save or `ESC` to cancel
+
+**Example Description:**
+```markdown
+# Review Pull Request
+
+PR: https://github.com/team/repo/pull/234
+
+## Checklist
+- Check error handling
+- Verify test coverage
+- Review documentation updates
+
+## Notes
+Remember to test the `edge_case()` function.
+```
 
 ### Postponing TODOs
 
@@ -89,7 +123,7 @@ The postpone feature allows you to defer tasks until tomorrow:
 
 ## Data Storage
 
-TODO items are automatically saved to `~/.todo-tui.json` in your home directory. The data persists between sessions, so you can safely close and reopen the app without losing your tasks.
+TODO items are automatically saved to `~/.todo-tui.json` in your home directory. The data persists between sessions, so you can safely close and reopen the app without losing your tasks or their descriptions.
 
 ## Development
 
@@ -162,6 +196,12 @@ python examples/basic_usage.py
 - Try a different terminal emulator if problems persist
 - Minimum terminal size: 80x24 characters
 
+### Description editor issues
+
+- Use `Ctrl+S` to save changes in the description editor
+- Press `ESC` to cancel without saving
+- The editor supports multi-line text - press `Enter` to create new lines
+
 ## Contributing
 
 Contributions are welcome! Please:
@@ -188,4 +228,4 @@ MIT License - see LICENSE file for details
 
 ## Roadmap
 
-See [SPEC.md](SPEC.md) for planned features and enhancements.
+See [IMPROVEMENTS_PROPOSAL.md](IMPROVEMENTS_PROPOSAL.md) for planned features and enhancements.

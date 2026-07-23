@@ -17,6 +17,7 @@ class TodoItem:
         created_at: Timestamp when the task was created
         completed_at: Timestamp when the task was completed (None if not completed)
         postpone_until: Date until which the task is postponed (None if not postponed)
+        description: Multi-line description/notes for the task (None if no description)
     """
     
     title: str
@@ -25,6 +26,7 @@ class TodoItem:
     created_at: datetime = field(default_factory=datetime.now)
     completed_at: Optional[datetime] = None
     postpone_until: Optional[date] = None
+    description: Optional[str] = None
     
     def toggle_completed(self) -> None:
         """Toggle the completion status of the TODO item."""
@@ -56,6 +58,14 @@ class TodoItem:
         """Clear the postpone date."""
         self.postpone_until = None
     
+    def has_description(self) -> bool:
+        """Check if the TODO item has a description.
+        
+        Returns:
+            True if the item has a non-empty description, False otherwise.
+        """
+        return self.description is not None and len(self.description.strip()) > 0
+    
     def to_dict(self) -> dict:
         """Convert the TODO item to a dictionary for serialization.
         
@@ -69,6 +79,7 @@ class TodoItem:
             "created_at": self.created_at.isoformat(),
             "completed_at": self.completed_at.isoformat() if self.completed_at else None,
             "postpone_until": self.postpone_until.isoformat() if self.postpone_until else None,
+            "description": self.description,
         }
     
     @classmethod
@@ -96,10 +107,12 @@ class TodoItem:
                 if data.get("postpone_until")
                 else None
             ),
+            description=data.get("description"),
         )
     
     def __str__(self) -> str:
         """String representation of the TODO item."""
         status = "✓" if self.completed else " "
         postponed = " [postponed]" if self.is_postponed() else ""
-        return f"[{status}] {self.title}{postponed}"
+        has_desc = " [+]" if self.has_description() else ""
+        return f"[{status}] {self.title}{postponed}{has_desc}"
