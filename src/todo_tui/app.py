@@ -1,5 +1,6 @@
 """Main Textual application for the TODO TUI app."""
 
+from pathlib import Path
 from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Vertical
@@ -8,6 +9,11 @@ from textual.message import Message
 
 from .models import TodoItem
 from .storage import TodoStorage
+from .config import Config
+from .help_overlay import HelpOverlay
+from .tutorial import TutorialScreen
+from .keybindings import KeybindingsScreen
+from .cheatsheet import export_cheat_sheet
 
 
 class TodoListItem(ListItem):
@@ -156,12 +162,17 @@ class TodoApp(App):
         Binding("space", "toggle_todo", "Toggle", show=True),
         Binding("d", "delete_todo", "Delete", show=True),
         Binding("p", "postpone_todo", "Postpone", show=True),
+        Binding("question_mark", "show_help", "Help", show=True, key_display="?"),
+        Binding("c", "customize_keys", "Customize", show=True),
+        Binding("x", "export_cheatsheet", "Cheat Sheet", show=True),
+        Binding("t", "show_tutorial", "Tutorial", show=False),
     ]
     
     def __init__(self):
         """Initialize the TODO app."""
         super().__init__()
         self.storage = TodoStorage()
+        self.config = Config()
         self.todos: list[TodoItem] = []
     
     def compose(self) -> ComposeResult:
@@ -174,10 +185,22 @@ class TodoApp(App):
                 yield Input(placeholder="Enter a new task...", id="todo-input")
         yield Footer()
     
-    def on_mount(self) -> None:
+    async def on_mount(self) -> None:
         """Load todos when the app starts."""
         self.title = "✨ TODO TUI App ✨"
         self.load_todos()
+        
+        # Show tutorial for first-time users
+        if not self.config.tutorial_completed:
+            await self._show_tutorial_on_first_run()
+    
+    async def _show_tutorial_on_first_run(self) -> None:
+        """Show tutorial for first-time users."""
+        tutorial = TutorialScreen()
+        result = await self.push_screen_wait(tutorial)
+        if result:  # User clicked "Start Using App"
+            self.config.mark_tutorial_completed()
+            self.notify("Welcome! Press '?' anytime for help.", timeout=3)
     
     def load_todos(self) -> None:
         """Load todos from storage and display them."""
@@ -258,6 +281,44 @@ class TodoApp(App):
                 self.notify(f"Postponed until {todo.postpone_until}", timeout=2)
             except Exception as e:
                 self.notify(f"Error postponing todo: {e}", severity="error")
+    
+    def action_show_help(self) -> None:
+        """Show the help overlay with keyboard shortcuts."""
+        self.push_screen(HelpOverlay())
+    
+    async def action_customize_keys(self) -> None:
+        """Show the key bindings customization screen."""
+        keybindings_screen = KeybindingsScreen(self.config)
+        result = await self.push_screen_wait(keybindings_screen)
+        if result:
+            self.notify("Key bindings saved! Restart app to apply changes.", timeout=3)
+    
+    def action_export_cheatsheet(self) -> None:
+        """Export a print-friendly cheat sheet."""
+        try:
+            help_overlay = HelpOverlay()
+            
+            # Export text version
+            text_path = Path.home() / "todo-tui-shortcuts.txt"
+            export_cheat_sheet(help_overlay.shortcuts, text_path)
+            
+            # Export markdown version
+            md_path = Path.home() / "todo-tui-shortcuts.md"
+            export_cheat_sheet(help_overlay.shortcuts, md_path)
+            
+            self.notify(
+                f"Cheat sheets exported!\n"
+                f"Text: {text_path.name}\n"
+                f"Markdown: {md_path.name}",
+                timeout=5
+            )
+        except Exception as e:
+            self.notify(f"Error exporting cheat sheet: {e}", severity="error")
+    
+    async def action_show_tutorial(self) -> None:
+        """Show the tutorial."""
+        tutorial = TutorialScreen()
+        await self.push_screen_wait(tutorial)
 
 
 def main():
