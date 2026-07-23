@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, Optional
+from typing import Dict, Optional, Any
 
 
 class ThemeName(str, Enum):
@@ -734,7 +734,7 @@ def create_custom_theme(name: str, display_name: str, colors: Dict[str, str]) ->
     return Theme(name=name, display_name=display_name, css=css)
 
 
-def load_custom_theme(theme_data: Dict[str, any]) -> Optional[Theme]:
+def load_custom_theme(theme_data: Dict[str, Any]) -> Optional[Theme]:
     """Load a custom theme from saved data.
     
     Args:
