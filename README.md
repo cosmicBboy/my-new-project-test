@@ -13,6 +13,10 @@ A simple, interactive TODO list application with a Text User Interface (TUI) bui
 - ⌨️ Keyboard-driven interface
 - 🎨 Clean, modern TUI design
 - 🚀 Fast and lightweight
+- ❓ Interactive keyboard shortcuts help (press `?`)
+- 🎓 Built-in tutorial for new users
+- ⚙️ Customizable key bindings with persistence
+- 📄 Export keyboard shortcuts cheat sheet
 
 ## Requirements
 
@@ -57,6 +61,13 @@ Start the TODO TUI app:
 uv run todo-tui
 ```
 
+### First-Time Setup
+
+When you run the app for the first time, you'll see an interactive tutorial that walks you through the basic features. You can:
+
+- Skip the tutorial by pressing `Escape`
+- View it again anytime by pressing `Ctrl+T`
+
 ### Keyboard Shortcuts
 
 | Key | Action |
@@ -67,15 +78,76 @@ uv run todo-tui
 | `Space` | Toggle TODO completion status |
 | `p` | Postpone selected TODO until tomorrow |
 | `d` | Delete selected TODO |
+| `?` | Show keyboard shortcuts help |
+| `Ctrl+T` | Show welcome tutorial |
+| `Ctrl+K` | View current key bindings |
+| `Ctrl+H` | Export shortcuts cheat sheet |
 | `q` | Quit application |
+
+**💡 Tips**: 
+- Press `?` at any time to see an interactive keyboard shortcuts reference with search functionality!
+- Press `Ctrl+H` to export a print-friendly cheat sheet to `~/todo-tui-shortcuts.txt`
+- Customize key bindings by editing `~/.todo-tui-keybindings.json`
 
 ### Basic Workflow
 
-1. **Add a TODO**: Press `Tab` to focus the input field, type your task, and press `Enter`
-2. **Complete a TODO**: Navigate to the item and press `Space`
-3. **Postpone a TODO**: Navigate to the item and press `p` to postpone it until tomorrow
-4. **Delete a TODO**: Navigate to the item and press `d`
-5. **Exit**: Press `q` to quit (your data is automatically saved)
+1. **First Launch**: Review the welcome tutorial to learn the basics
+2. **Add a TODO**: Press `Tab` to focus the input field, type your task, and press `Enter`
+3. **Complete a TODO**: Navigate to the item and press `Space`
+4. **Postpone a TODO**: Navigate to the item and press `p` to postpone it until tomorrow
+5. **Delete a TODO**: Navigate to the item and press `d`
+6. **Get Help**: Press `?` to view all keyboard shortcuts and search for specific commands
+7. **Exit**: Press `q` to quit (your data is automatically saved)
+
+### Keyboard Shortcuts Help
+
+The app includes an interactive help overlay that can be accessed by pressing `?`:
+
+- **Search**: Type to filter shortcuts by key or description
+- **Browse**: Shortcuts are organized by category for easy navigation
+- **Close**: Press `Escape`, `q`, or `?` again to close the help overlay
+
+This feature makes it easy to discover and learn all available keyboard shortcuts without leaving the app or consulting external documentation.
+
+### Customizing Key Bindings
+
+You can customize keyboard shortcuts to match your preferences:
+
+1. **View Current Bindings**: Press `Ctrl+K` to see all current key bindings
+2. **Edit Configuration**: Manually edit `~/.todo-tui-keybindings.json`
+3. **Example Configuration**:
+   ```json
+   {
+     "quit": "ctrl+q",
+     "toggle_todo": "t",
+     "delete_todo": "x",
+     "postpone_todo": "s",
+     "show_shortcuts": "h",
+     "export_cheatsheet": "ctrl+e",
+     "customize_keys": "ctrl+k",
+     "show_tutorial": "ctrl+t"
+   }
+   ```
+4. **Reset to Defaults**: Delete the config file to restore default bindings
+
+Your custom bindings are automatically reflected in:
+- The interactive help overlay (`?`)
+- The exported cheat sheet (`Ctrl+H`)
+- The footer bar
+
+### Exporting Keyboard Shortcuts
+
+Create a print-friendly cheat sheet of all keyboard shortcuts:
+
+1. Press `Ctrl+H` in the app
+2. A text file is created at `~/todo-tui-shortcuts.txt`
+3. Open and print the file for offline reference
+
+The exported cheat sheet includes:
+- All keyboard shortcuts organized by category
+- Your current custom key bindings
+- Configuration file locations
+- Instructions for customization
 
 ### Postponing TODOs
 
@@ -89,7 +161,13 @@ The postpone feature allows you to defer tasks until tomorrow:
 
 ## Data Storage
 
-TODO items are automatically saved to `~/.todo-tui.json` in your home directory. The data persists between sessions, so you can safely close and reopen the app without losing your tasks.
+The app uses several files for data persistence:
+
+- **TODOs**: `~/.todo-tui.json` - Your TODO items
+- **Key Bindings**: `~/.todo-tui-keybindings.json` - Custom keyboard shortcuts
+- **App Config**: `~/.todo-tui-config.json` - Application settings (tutorial status, etc.)
+
+All data persists between sessions, so you can safely close and reopen the app without losing anything.
 
 ## Development
 
@@ -116,13 +194,17 @@ todo-tui/
 │       ├── __init__.py       # Package initialization
 │       ├── app.py            # Main Textual application
 │       ├── models.py         # Data models (TodoItem)
-│       └── storage.py        # Persistence layer
+│       ├── storage.py        # Persistence layer
+│       └── config.py         # Configuration management
 ├── tests/
 │   ├── test_models.py        # Model tests
 │   ├── test_storage.py       # Storage tests
-│   └── test_app.py           # App tests
+│   ├── test_app.py           # App tests
+│   └── test_config.py        # Config tests
 ├── examples/
-│   └── basic_usage.py        # Usage examples
+│   ├── basic_usage.py        # Basic usage examples
+│   ├── advanced_usage.py     # Advanced usage examples
+│   └── keyboard_shortcuts_demo.py  # Shortcuts feature demo
 ├── pyproject.toml            # Project configuration
 ├── README.md                 # This file
 └── SPEC.md                   # Design specification
@@ -141,6 +223,8 @@ Check out the `examples/` directory for usage examples:
 
 ```bash
 python examples/basic_usage.py
+python examples/advanced_usage.py
+python examples/keyboard_shortcuts_demo.py
 ```
 
 ## Troubleshooting
@@ -155,6 +239,18 @@ python examples/basic_usage.py
 - The data file is located at `~/.todo-tui.json`
 - If corrupted, you can delete it (you'll lose your TODOs)
 - The app will create a new file on next run
+
+### Key bindings not working
+
+- Check your custom bindings file: `~/.todo-tui-keybindings.json`
+- Ensure the JSON syntax is valid
+- Delete the file to reset to defaults
+- Press `Ctrl+K` to view current bindings
+
+### Tutorial not showing
+
+- Delete `~/.todo-tui-config.json` to reset first-run status
+- Or press `Ctrl+T` to manually show the tutorial
 
 ### Terminal display issues
 
@@ -175,6 +271,7 @@ Contributions are welcome! Please:
 ## Documentation
 
 - [SPEC.md](SPEC.md) - Detailed design decisions and specifications
+- [IMPROVEMENTS_PROPOSAL.md](IMPROVEMENTS_PROPOSAL.md) - Future enhancements roadmap
 - [Textual Documentation](https://textual.textualize.io/) - Framework documentation
 
 ## License
@@ -188,4 +285,22 @@ MIT License - see LICENSE file for details
 
 ## Roadmap
 
-See [SPEC.md](SPEC.md) for planned features and enhancements.
+See [IMPROVEMENTS_PROPOSAL.md](IMPROVEMENTS_PROPOSAL.md) for planned features and enhancements.
+
+---
+
+## Quick Reference
+
+### Essential Commands
+- **Add TODO**: `Tab` → type → `Enter`
+- **Complete**: `Space`
+- **Delete**: `d`
+- **Help**: `?`
+- **Tutorial**: `Ctrl+T`
+- **Quit**: `q`
+
+### Files
+- TODOs: `~/.todo-tui.json`
+- Key Bindings: `~/.todo-tui-keybindings.json`
+- Config: `~/.todo-tui-config.json`
+- Exported Cheat Sheet: `~/todo-tui-shortcuts.txt`
