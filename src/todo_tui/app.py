@@ -1,10 +1,12 @@
 """Main Textual application for the TODO TUI app."""
 
+from pathlib import Path
 from textual.app import App, ComposeResult
 from textual.binding import Binding
-from textual.containers import Container, Vertical
-from textual.widgets import Header, Footer, Input, Static, ListView, ListItem, Label
+from textual.containers import Container, Vertical, Horizontal
+from textual.widgets import Header, Footer, Input, Static, ListView, ListItem, Label, Button
 from textual.message import Message
+from textual.screen import ModalScreen
 
 from .models import TodoItem
 from .storage import TodoStorage
@@ -41,6 +43,238 @@ class TodoListItem(ListItem):
     def compose(self) -> ComposeResult:
         """Compose the list item."""
         yield self._label
+
+
+class ExportScreen(ModalScreen[tuple[str, str]]):
+    """Modal screen for exporting TODO items."""
+    
+    CSS = """
+    ExportScreen {
+        align: center middle;
+    }
+    
+    #export-dialog {
+        width: 60;
+        height: auto;
+        border: thick #8338ec;
+        background: #1a1f3a;
+        padding: 1 2;
+    }
+    
+    #export-dialog Static {
+        margin: 1 0;
+        color: #06ffa5;
+    }
+    
+    #export-dialog Input {
+        margin: 1 0;
+        border: solid #06ffa5;
+        background: #0f1425;
+    }
+    
+    #export-buttons {
+        height: auto;
+        margin-top: 1;
+        align: center middle;
+    }
+    
+    #export-buttons Button {
+        margin: 0 1;
+    }
+    """
+    
+    BINDINGS = [
+        Binding("escape", "cancel", "Cancel", show=False),
+    ]
+    
+    def compose(self) -> ComposeResult:
+        """Compose the export dialog."""
+        with Container(id="export-dialog"):
+            yield Static("📤 Export TODO Items", classes="dialog-title")
+            yield Static("Enter export path (e.g., ~/todos.json):")
+            yield Input(placeholder="~/todos-export.json", id="export-path")
+            yield Static("Format will be auto-detected from extension")
+            yield Static("Supported: .json, .csv, .md, .html")
+            with Horizontal(id="export-buttons"):
+                yield Button("Export", variant="primary", id="export-btn")
+                yield Button("Cancel", id="cancel-btn")
+    
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        """Handle button presses."""
+        if event.button.id == "export-btn":
+            path_input = self.query_one("#export-path", Input)
+            path_str = path_input.value.strip()
+            if path_str:
+                # Detect format from extension
+                path = Path(path_str).expanduser()
+                ext = path.suffix.lower()
+                if ext in ('.json', '.csv', '.md', '.html'):
+                    format_map = {'.json': 'json', '.csv': 'csv', '.md': 'markdown', '.html': 'html'}
+                    self.dismiss((path_str, format_map.get(ext, 'json')))
+                else:
+                    self.app.notify("Unsupported file extension. Use .json, .csv, .md, or .html", severity="error")
+        else:
+            self.action_cancel()
+    
+    def on_input_submitted(self, event: Input.Submitted) -> None:
+        """Handle input submission."""
+        if event.input.id == "export-path":
+            self.query_one("#export-btn", Button).press()
+    
+    def action_cancel(self) -> None:
+        """Cancel the dialog."""
+        self.dismiss(None)
+
+
+class ImportScreen(ModalScreen[tuple[str, bool]]):
+    """Modal screen for importing TODO items."""
+    
+    CSS = """
+    ImportScreen {
+        align: center middle;
+    }
+    
+    #import-dialog {
+        width: 60;
+        height: auto;
+        border: thick #8338ec;
+        background: #1a1f3a;
+        padding: 1 2;
+    }
+    
+    #import-dialog Static {
+        margin: 1 0;
+        color: #06ffa5;
+    }
+    
+    #import-dialog Input {
+        margin: 1 0;
+        border: solid #06ffa5;
+        background: #0f1425;
+    }
+    
+    #import-buttons {
+        height: auto;
+        margin-top: 1;
+        align: center middle;
+    }
+    
+    #import-buttons Button {
+        margin: 0 1;
+    }
+    
+    .merge-indicator {
+        color: #ffbe0b;
+        text-style: bold;
+    }
+    """
+    
+    BINDINGS = [
+        Binding("escape", "cancel", "Cancel", show=False),
+        Binding("ctrl+m", "toggle_merge", "Toggle Merge", show=True),
+    ]
+    
+    def __init__(self) -> None:
+        """Initialize the import screen."""
+        super().__init__()
+        self.merge_mode = False
+    
+    def compose(self) -> ComposeResult:
+        """Compose the import dialog."""
+        with Container(id="import-dialog"):
+            yield Static("📥 Import TODO Items", classes="dialog-title")
+            yield Static("Enter import path (must be .json):")
+            yield Input(placeholder="~/todos-import.json", id="import-path")
+            yield Static("Mode: Replace All", id="mode-indicator", classes="merge-indicator")
+            yield Static("(Press Ctrl+M to toggle merge mode)")
+            with Horizontal(id="import-buttons"):
+                yield Button("Import", variant="primary", id="import-btn")
+                yield Button("Cancel", id="cancel-btn")
+    
+    def action_toggle_merge(self) -> None:
+        """Toggle merge mode."""
+        self.merge_mode = not self.merge_mode
+        mode_text = "Mode: Merge (keep existing)" if self.merge_mode else "Mode: Replace All"
+        self.query_one("#mode-indicator", Static).update(mode_text)
+    
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        """Handle button presses."""
+        if event.button.id == "import-btn":
+            path_input = self.query_one("#import-path", Input)
+            path_str = path_input.value.strip()
+            if path_str:
+                self.dismiss((path_str, self.merge_mode))
+        else:
+            self.action_cancel()
+    
+    def on_input_submitted(self, event: Input.Submitted) -> None:
+        """Handle input submission."""
+        if event.input.id == "import-path":
+            self.query_one("#import-btn", Button).press()
+    
+    def action_cancel(self) -> None:
+        """Cancel the dialog."""
+        self.dismiss(None)
+
+
+class BackupScreen(ModalScreen[str]):
+    """Modal screen for backup operations."""
+    
+    CSS = """
+    BackupScreen {
+        align: center middle;
+    }
+    
+    #backup-dialog {
+        width: 60;
+        height: auto;
+        border: thick #8338ec;
+        background: #1a1f3a;
+        padding: 1 2;
+    }
+    
+    #backup-dialog Static {
+        margin: 1 0;
+        color: #06ffa5;
+    }
+    
+    #backup-buttons {
+        height: auto;
+        margin-top: 1;
+        align: center middle;
+    }
+    
+    #backup-buttons Button {
+        margin: 0 1;
+    }
+    """
+    
+    BINDINGS = [
+        Binding("escape", "cancel", "Cancel", show=False),
+    ]
+    
+    def compose(self) -> ComposeResult:
+        """Compose the backup dialog."""
+        with Container(id="backup-dialog"):
+            yield Static("💾 Backup Operations", classes="dialog-title")
+            yield Static("Choose an action:")
+            with Horizontal(id="backup-buttons"):
+                yield Button("Create Backup", variant="primary", id="create-btn")
+                yield Button("List Backups", id="list-btn")
+                yield Button("Cancel", id="cancel-btn")
+    
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        """Handle button presses."""
+        if event.button.id == "create-btn":
+            self.dismiss("create")
+        elif event.button.id == "list-btn":
+            self.dismiss("list")
+        else:
+            self.action_cancel()
+    
+    def action_cancel(self) -> None:
+        """Cancel the dialog."""
+        self.dismiss(None)
 
 
 class TodoApp(App):
@@ -149,6 +383,10 @@ class TodoApp(App):
         color: #ffffff;
         text-style: italic;
     }
+    
+    Button {
+        margin: 0 1;
+    }
     """
     
     BINDINGS = [
@@ -156,6 +394,10 @@ class TodoApp(App):
         Binding("space", "toggle_todo", "Toggle", show=True),
         Binding("d", "delete_todo", "Delete", show=True),
         Binding("p", "postpone_todo", "Postpone", show=True),
+        Binding("e", "export", "Export", show=True),
+        Binding("i", "import_todos", "Import", show=True),
+        Binding("b", "backup", "Backup", show=True),
+        Binding("a", "archive", "Archive", show=True),
     ]
     
     def __init__(self):
@@ -178,6 +420,12 @@ class TodoApp(App):
         """Load todos when the app starts."""
         self.title = "✨ TODO TUI App ✨"
         self.load_todos()
+        
+        # Notify user if automatic backup was created on startup
+        backups = self.storage.list_backups()
+        if backups:
+            # Check if we have recent automatic backups
+            self.notify("💾 Automatic backups enabled (backups created daily)", timeout=3)
     
     def load_todos(self) -> None:
         """Load todos from storage and display them."""
@@ -258,6 +506,97 @@ class TodoApp(App):
                 self.notify(f"Postponed until {todo.postpone_until}", timeout=2)
             except Exception as e:
                 self.notify(f"Error postponing todo: {e}", severity="error")
+    
+    def action_export(self) -> None:
+        """Open export dialog."""
+        self.push_screen(ExportScreen(), self._handle_export)
+    
+    def _handle_export(self, result: tuple[str, str] | None) -> None:
+        """Handle export dialog result."""
+        if result is None:
+            return
+        
+        path_str, format = result
+        path = Path(path_str).expanduser()
+        
+        try:
+            # Create parent directory if it doesn't exist
+            path.parent.mkdir(parents=True, exist_ok=True)
+            
+            # Export todos
+            self.storage.export(path, format=format, todos=self.todos)
+            self.notify(f"✅ Exported {len(self.todos)} todos to {path}", timeout=3)
+        except Exception as e:
+            self.notify(f"Export failed: {e}", severity="error")
+    
+    def action_import_todos(self) -> None:
+        """Open import dialog."""
+        self.push_screen(ImportScreen(), self._handle_import)
+    
+    def _handle_import(self, result: tuple[str, bool] | None) -> None:
+        """Handle import dialog result."""
+        if result is None:
+            return
+        
+        path_str, merge = result
+        path = Path(path_str).expanduser()
+        
+        try:
+            imported_todos = self.storage.import_json(path, merge=merge)
+            self.load_todos()
+            
+            mode = "merged" if merge else "imported"
+            self.notify(f"✅ Successfully {mode} {len(imported_todos)} todos", timeout=3)
+        except FileNotFoundError:
+            self.notify(f"File not found: {path}", severity="error")
+        except ValueError as e:
+            self.notify(f"Import failed: {e}", severity="error")
+        except Exception as e:
+            self.notify(f"Import error: {e}", severity="error")
+    
+    def action_backup(self) -> None:
+        """Open backup dialog."""
+        self.push_screen(BackupScreen(), self._handle_backup)
+    
+    def _handle_backup(self, action: str | None) -> None:
+        """Handle backup dialog result."""
+        if action is None:
+            return
+        
+        if action == "create":
+            try:
+                backup_path = self.storage.create_backup()
+                self.notify(f"✅ Backup created: {backup_path}", timeout=3)
+            except Exception as e:
+                self.notify(f"Backup failed: {e}", severity="error")
+        
+        elif action == "list":
+            try:
+                backups = self.storage.list_backups()
+                if backups:
+                    backup_list = "\n".join([f"  • {b.name}" for b in backups[:5]])
+                    self.notify(f"Recent backups:\n{backup_list}", timeout=5)
+                else:
+                    self.notify("No backups found", timeout=3)
+            except Exception as e:
+                self.notify(f"Error listing backups: {e}", severity="error")
+    
+    def action_archive(self) -> None:
+        """Archive completed todos."""
+        try:
+            count = self.storage.archive_completed()
+            if count > 0:
+                self.load_todos()
+                self.notify(f"✅ Archived {count} completed todo(s)", timeout=3)
+            else:
+                self.notify("No completed todos to archive", timeout=2)
+        except Exception as e:
+            self.notify(f"Archive failed: {e}", severity="error")
+    
+    def on_unmount(self) -> None:
+        """Cleanup when app is shutting down."""
+        # Create final automatic backup if needed
+        self.storage.shutdown()
 
 
 def main():
