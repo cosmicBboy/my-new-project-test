@@ -6,6 +6,7 @@ from textual.widgets import Input, ListView
 
 from todo_tui.app import TodoApp
 from todo_tui.models import TodoItem
+from todo_tui.themes import ThemePreset
 
 
 @pytest.fixture
@@ -17,7 +18,23 @@ def app():
 def test_app_initialization(app):
     """Test app initializes correctly."""
     assert app.storage is not None
+    assert app.config is not None
     assert isinstance(app.todos, list)
+
+
+def test_app_has_theme(app):
+    """Test app has a theme configured."""
+    assert app.config.theme is not None
+    assert app.config.theme.preset in ThemePreset
+
+
+def test_app_css_property(app):
+    """Test app CSS property generates valid CSS."""
+    css = app.CSS
+    assert isinstance(css, str)
+    assert len(css) > 0
+    assert "background:" in css
+    assert "color:" in css
 
 
 def test_app_title(app):
@@ -32,6 +49,9 @@ def test_app_has_bindings(app):
     assert "space" in binding_keys  # toggle
     assert "d" in binding_keys  # delete
     assert "p" in binding_keys  # postpone
+    assert "t" in binding_keys  # theme
+    assert "f" in binding_keys  # font size
+    assert "l" in binding_keys  # layout
 
 
 @pytest.mark.asyncio
@@ -183,3 +203,57 @@ async def test_app_postponed_todo_displayed(app):
         # Check that todo is in the list
         assert len(app.todos) == 1
         assert app.todos[0].is_postponed() is True
+
+
+@pytest.mark.asyncio
+async def test_app_cycle_theme(app):
+    """Test cycling through themes."""
+    async with app.run_test() as pilot:
+        original_theme = app.config.theme.preset
+        
+        # Cycle theme
+        await pilot.press("t")
+        
+        # Check that theme changed
+        new_theme = app.config.theme.preset
+        assert new_theme != original_theme
+
+
+@pytest.mark.asyncio
+async def test_app_cycle_font_size(app):
+    """Test cycling through font sizes."""
+    async with app.run_test() as pilot:
+        original_size = app.config.theme.font_size
+        
+        # Cycle font size
+        await pilot.press("f")
+        
+        # Check that font size changed
+        new_size = app.config.theme.font_size
+        assert new_size != original_size
+
+
+@pytest.mark.asyncio
+async def test_app_cycle_layout(app):
+    """Test cycling through layouts."""
+    async with app.run_test() as pilot:
+        original_layout = app.config.theme.layout
+        
+        # Cycle layout
+        await pilot.press("l")
+        
+        # Check that layout changed
+        new_layout = app.config.theme.layout
+        assert new_layout != original_layout
+
+
+@pytest.mark.asyncio
+async def test_app_title_includes_theme(app):
+    """Test app title includes current theme name."""
+    async with app.run_test() as pilot:
+        # Title should include theme name
+        assert app.config.theme.name in app.title
+        
+        # Cycle theme and check title updates
+        await pilot.press("t")
+        assert app.config.theme.name in app.title
