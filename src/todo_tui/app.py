@@ -125,11 +125,7 @@ class TodoApp(App):
         if theme:
             # Combine base CSS (font sizes) with theme CSS
             combined_css = get_base_css() + "\n" + theme.css
-            # Use uninstall_screen to clear old CSS, then install new
-            try:
-                self.uninstall_screen(self)
-            except:
-                pass  # First time, nothing to uninstall
+            # Parse the CSS to apply it immediately
             self.stylesheet.parse(combined_css)
             self.refresh(layout=True)
     
