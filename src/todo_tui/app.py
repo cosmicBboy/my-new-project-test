@@ -1,5 +1,6 @@
 """Main Textual application for the TODO TUI app."""
 
+from typing import Dict, Optional
 from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Vertical, VerticalScroll, Horizontal
