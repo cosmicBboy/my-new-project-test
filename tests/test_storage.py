@@ -237,8 +237,11 @@ def test_export_markdown(temp_storage):
     todos = [
         TodoItem(title="Active task 1", created_at=now),
         TodoItem(title="Active task 2", created_at=now),
-        TodoItem(title="Completed task", completed=True, created_at=now, completed_at=completed_time),
+        TodoItem(title="Completed task", created_at=now),
     ]
+    # Mark the completed task as completed
+    todos[2].toggle_completed()
+    
     # Add a postponed task
     postponed = TodoItem(title="Postponed task", created_at=now)
     postponed.postpone_until_tomorrow()
@@ -404,9 +407,10 @@ def test_export_import_roundtrip(temp_storage):
     # Create todos with various states
     todos = [
         TodoItem(title="Simple task"),
-        TodoItem(title="Completed task", completed=True),
+        TodoItem(title="Completed task"),
     ]
-    todos[1].toggle_completed()  # Set completion time
+    # Mark the second task as completed (this sets completed_at)
+    todos[1].toggle_completed()
     
     postponed = TodoItem(title="Postponed task")
     postponed.postpone_until_tomorrow()
