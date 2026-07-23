@@ -10,6 +10,8 @@ A simple, interactive TODO list application with a Text User Interface (TUI) bui
 - 📝 Add, complete, and delete TODO items
 - ⏰ Postpone TODO items until tomorrow
 - 💾 Automatic persistence (data saved between sessions)
+- 📤 Export TODO lists to JSON or Markdown
+- 📥 Import TODO lists from JSON files
 - ⌨️ Keyboard-driven interface
 - 🎨 Clean, modern TUI design
 - 🚀 Fast and lightweight
@@ -67,6 +69,8 @@ uv run todo-tui
 | `Space` | Toggle TODO completion status |
 | `p` | Postpone selected TODO until tomorrow |
 | `d` | Delete selected TODO |
+| `e` | Export TODO list |
+| `i` | Import TODO list |
 | `q` | Quit application |
 
 ### Basic Workflow
@@ -87,9 +91,56 @@ The postpone feature allows you to defer tasks until tomorrow:
 - Pressing `p` multiple times keeps the postpone date as tomorrow (it doesn't advance further)
 - Postponed items automatically become active again after the postpone date passes
 
+### Export and Import
+
+#### Exporting TODO Lists
+
+Make your TODO lists portable by exporting them:
+
+1. Press `e` to open the export dialog
+2. Enter a filename (without extension)
+3. Choose format:
+   - Press `j` for JSON format (machine-readable, preserves all data)
+   - Press `m` for Markdown format (human-readable, great for sharing)
+4. Files are saved to `~/todo-exports/`
+
+**Export formats:**
+
+- **JSON**: Complete data export including all metadata (IDs, timestamps, postpone dates). Perfect for backups and importing into another instance.
+- **Markdown**: Human-readable format organized by task status (Active, Postponed, Completed). Great for sharing, printing, or viewing in any text editor.
+
+#### Importing TODO Lists
+
+Import TODO lists from JSON files:
+
+1. Press `i` to open the import dialog
+2. Enter the path to your JSON file (supports `~` for home directory)
+3. Choose import mode:
+   - Press `a` to append (add to existing todos, avoiding duplicates)
+   - Press `r` to replace (remove all existing todos and import new ones)
+4. The import will process and display a count of imported items
+
+**Import modes:**
+
+- **Append**: Adds imported todos to your existing list, automatically avoiding duplicates based on todo IDs
+- **Replace**: Removes all current todos and replaces them with the imported ones (use for restoring backups)
+
+**Example workflow:**
+```bash
+# Export your todos
+Press 'e' → enter "backup-2024-01" → press 'j'
+# Creates: ~/todo-exports/backup-2024-01.json
+
+# Import todos from a file
+Press 'i' → enter "~/todo-exports/backup-2024-01.json" → press 'a'
+# Appends todos from the backup file
+```
+
 ## Data Storage
 
 TODO items are automatically saved to `~/.todo-tui.json` in your home directory. The data persists between sessions, so you can safely close and reopen the app without losing your tasks.
+
+Exported files are saved to `~/todo-exports/` by default.
 
 ## Development
 
@@ -156,6 +207,12 @@ python examples/basic_usage.py
 - If corrupted, you can delete it (you'll lose your TODOs)
 - The app will create a new file on next run
 
+### Import/Export issues
+
+- Ensure the export directory exists and is writable: `~/todo-exports/`
+- For imports, verify the file path is correct and the file contains valid JSON
+- Only JSON files can be imported (Markdown exports are for reading only)
+
 ### Terminal display issues
 
 - Ensure your terminal supports Unicode characters
@@ -175,6 +232,7 @@ Contributions are welcome! Please:
 ## Documentation
 
 - [SPEC.md](SPEC.md) - Detailed design decisions and specifications
+- [IMPROVEMENTS_PROPOSAL.md](IMPROVEMENTS_PROPOSAL.md) - Planned features and enhancements
 - [Textual Documentation](https://textual.textualize.io/) - Framework documentation
 
 ## License
@@ -188,4 +246,4 @@ MIT License - see LICENSE file for details
 
 ## Roadmap
 
-See [SPEC.md](SPEC.md) for planned features and enhancements.
+See [IMPROVEMENTS_PROPOSAL.md](IMPROVEMENTS_PROPOSAL.md) for planned features and enhancements.

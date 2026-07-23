@@ -1,10 +1,12 @@
 """Main Textual application for the TODO TUI app."""
 
+from pathlib import Path
 from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Vertical
 from textual.widgets import Header, Footer, Input, Static, ListView, ListItem, Label
 from textual.message import Message
+from textual.screen import ModalScreen
 
 from .models import TodoItem
 from .storage import TodoStorage
@@ -41,6 +43,119 @@ class TodoListItem(ListItem):
     def compose(self) -> ComposeResult:
         """Compose the list item."""
         yield self._label
+
+
+class ExportScreen(ModalScreen):
+    """Modal screen for exporting todos."""
+    
+    CSS = """
+    ExportScreen {
+        align: center middle;
+    }
+    
+    #export-dialog {
+        width: 60;
+        height: auto;
+        border: heavy #ff006e;
+        background: #1a1f3a;
+        padding: 1 2;
+    }
+    
+    #export-dialog Static {
+        color: #06ffa5;
+        text-align: center;
+        margin-bottom: 1;
+    }
+    
+    #export-dialog Input {
+        margin: 1 0;
+    }
+    """
+    
+    def compose(self) -> ComposeResult:
+        """Compose the export dialog."""
+        with Container(id="export-dialog"):
+            yield Static("💾 Export TODO List 💾")
+            yield Static("Enter filename (without extension):")
+            yield Input(placeholder="my-todos", id="export-filename")
+            yield Static("\nFormat: [j]son or [m]arkdown")
+    
+    def on_input_submitted(self, event: Input.Submitted) -> None:
+        """Handle filename submission."""
+        if event.input.id == "export-filename":
+            filename = event.value.strip() or "todos-export"
+            self.dismiss(filename)
+    
+    def on_key(self, event) -> None:
+        """Handle key presses for format selection."""
+        if event.key == "j":
+            input_widget = self.query_one("#export-filename", Input)
+            filename = input_widget.value.strip() or "todos-export"
+            self.dismiss(("json", filename))
+        elif event.key == "m":
+            input_widget = self.query_one("#export-filename", Input)
+            filename = input_widget.value.strip() or "todos-export"
+            self.dismiss(("markdown", filename))
+        elif event.key == "escape":
+            self.dismiss(None)
+
+
+class ImportScreen(ModalScreen):
+    """Modal screen for importing todos."""
+    
+    CSS = """
+    ImportScreen {
+        align: center middle;
+    }
+    
+    #import-dialog {
+        width: 60;
+        height: auto;
+        border: heavy #ff006e;
+        background: #1a1f3a;
+        padding: 1 2;
+    }
+    
+    #import-dialog Static {
+        color: #06ffa5;
+        text-align: center;
+        margin-bottom: 1;
+    }
+    
+    #import-dialog Input {
+        margin: 1 0;
+    }
+    """
+    
+    def compose(self) -> ComposeResult:
+        """Compose the import dialog."""
+        with Container(id="import-dialog"):
+            yield Static("📥 Import TODO List 📥")
+            yield Static("Enter path to JSON file:")
+            yield Input(placeholder="path/to/todos.json", id="import-filepath")
+            yield Static("\n[r]eplace all or [a]ppend to existing")
+    
+    def on_input_submitted(self, event: Input.Submitted) -> None:
+        """Handle filepath submission."""
+        if event.input.id == "import-filepath":
+            filepath = event.value.strip()
+            if filepath:
+                self.dismiss(filepath)
+    
+    def on_key(self, event) -> None:
+        """Handle key presses for mode selection."""
+        if event.key == "r":
+            input_widget = self.query_one("#import-filepath", Input)
+            filepath = input_widget.value.strip()
+            if filepath:
+                self.dismiss(("replace", filepath))
+        elif event.key == "a":
+            input_widget = self.query_one("#import-filepath", Input)
+            filepath = input_widget.value.strip()
+            if filepath:
+                self.dismiss(("append", filepath))
+        elif event.key == "escape":
+            self.dismiss(None)
 
 
 class TodoApp(App):
@@ -156,6 +271,8 @@ class TodoApp(App):
         Binding("space", "toggle_todo", "Toggle", show=True),
         Binding("d", "delete_todo", "Delete", show=True),
         Binding("p", "postpone_todo", "Postpone", show=True),
+        Binding("e", "export_todos", "Export", show=True),
+        Binding("i", "import_todos", "Import", show=True),
     ]
     
     def __init__(self):
@@ -258,6 +375,71 @@ class TodoApp(App):
                 self.notify(f"Postponed until {todo.postpone_until}", timeout=2)
             except Exception as e:
                 self.notify(f"Error postponing todo: {e}", severity="error")
+    
+    def action_export_todos(self) -> None:
+        """Export todos to a file."""
+        def handle_export(result):
+            if result is None:
+                return
+            
+            try:
+                if isinstance(result, tuple):
+                    format_type, filename = result
+                else:
+                    # Default to JSON if only filename provided
+                    format_type = "json"
+                    filename = result
+                
+                # Determine export path
+                export_dir = Path.home() / "todo-exports"
+                export_dir.mkdir(exist_ok=True)
+                
+                if format_type == "json":
+                    export_path = export_dir / f"{filename}.json"
+                    self.storage.export_json(export_path)
+                    self.notify(f"✅ Exported to {export_path}", timeout=3)
+                elif format_type == "markdown":
+                    export_path = export_dir / f"{filename}.md"
+                    self.storage.export_markdown(export_path)
+                    self.notify(f"✅ Exported to {export_path}", timeout=3)
+                else:
+                    self.notify("Invalid format selected", severity="error")
+            except Exception as e:
+                self.notify(f"❌ Export failed: {e}", severity="error", timeout=5)
+        
+        self.push_screen(ExportScreen(), handle_export)
+    
+    def action_import_todos(self) -> None:
+        """Import todos from a file."""
+        def handle_import(result):
+            if result is None:
+                return
+            
+            try:
+                if isinstance(result, tuple):
+                    mode, filepath = result
+                    replace = (mode == "replace")
+                else:
+                    # Default to append if only filepath provided
+                    filepath = result
+                    replace = False
+                
+                import_path = Path(filepath).expanduser()
+                count = self.storage.import_json(import_path, replace=replace)
+                
+                # Reload todos
+                self.load_todos()
+                
+                mode_text = "replaced with" if replace else "imported"
+                self.notify(f"✅ {count} todo(s) {mode_text}", timeout=3)
+            except FileNotFoundError:
+                self.notify(f"❌ File not found: {filepath}", severity="error", timeout=5)
+            except ValueError as e:
+                self.notify(f"❌ Import failed: {e}", severity="error", timeout=5)
+            except Exception as e:
+                self.notify(f"❌ Unexpected error: {e}", severity="error", timeout=5)
+        
+        self.push_screen(ImportScreen(), handle_import)
 
 
 def main():

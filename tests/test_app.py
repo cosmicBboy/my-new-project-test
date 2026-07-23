@@ -1,10 +1,12 @@
 """Tests for the Textual application."""
 
 import pytest
+import tempfile
+from pathlib import Path
 from datetime import date, timedelta
 from textual.widgets import Input, ListView
 
-from todo_tui.app import TodoApp
+from todo_tui.app import TodoApp, ExportScreen, ImportScreen
 from todo_tui.models import TodoItem
 
 
@@ -32,6 +34,8 @@ def test_app_has_bindings(app):
     assert "space" in binding_keys  # toggle
     assert "d" in binding_keys  # delete
     assert "p" in binding_keys  # postpone
+    assert "e" in binding_keys  # export
+    assert "i" in binding_keys  # import
 
 
 @pytest.mark.asyncio
@@ -183,3 +187,295 @@ async def test_app_postponed_todo_displayed(app):
         # Check that todo is in the list
         assert len(app.todos) == 1
         assert app.todos[0].is_postponed() is True
+
+
+@pytest.mark.asyncio
+async def test_export_screen_composition():
+    """Test ExportScreen modal composes correctly."""
+    screen = ExportScreen()
+    async with screen.run_test() as pilot:
+        # Check that input widget is present
+        input_widget = screen.query_one("#export-filename", Input)
+        assert input_widget is not None
+
+
+@pytest.mark.asyncio
+async def test_export_screen_cancel():
+    """Test ExportScreen can be cancelled with escape."""
+    screen = ExportScreen()
+    result = None
+    
+    async def capture_result(r):
+        nonlocal result
+        result = r
+    
+    async with screen.run_test() as pilot:
+        screen.dismiss = capture_result
+        await pilot.press("escape")
+        assert result is None
+
+
+@pytest.mark.asyncio
+async def test_export_screen_json_selection():
+    """Test ExportScreen JSON format selection."""
+    screen = ExportScreen()
+    result = None
+    
+    async def capture_result(r):
+        nonlocal result
+        result = r
+    
+    async with screen.run_test() as pilot:
+        screen.dismiss = capture_result
+        input_widget = screen.query_one("#export-filename", Input)
+        input_widget.value = "test-export"
+        await pilot.press("j")
+        assert result == ("json", "test-export")
+
+
+@pytest.mark.asyncio
+async def test_export_screen_markdown_selection():
+    """Test ExportScreen Markdown format selection."""
+    screen = ExportScreen()
+    result = None
+    
+    async def capture_result(r):
+        nonlocal result
+        result = r
+    
+    async with screen.run_test() as pilot:
+        screen.dismiss = capture_result
+        input_widget = screen.query_one("#export-filename", Input)
+        input_widget.value = "test-export"
+        await pilot.press("m")
+        assert result == ("markdown", "test-export")
+
+
+@pytest.mark.asyncio
+async def test_import_screen_composition():
+    """Test ImportScreen modal composes correctly."""
+    screen = ImportScreen()
+    async with screen.run_test() as pilot:
+        # Check that input widget is present
+        input_widget = screen.query_one("#import-filepath", Input)
+        assert input_widget is not None
+
+
+@pytest.mark.asyncio
+async def test_import_screen_cancel():
+    """Test ImportScreen can be cancelled with escape."""
+    screen = ImportScreen()
+    result = None
+    
+    async def capture_result(r):
+        nonlocal result
+        result = r
+    
+    async with screen.run_test() as pilot:
+        screen.dismiss = capture_result
+        await pilot.press("escape")
+        assert result is None
+
+
+@pytest.mark.asyncio
+async def test_import_screen_append_selection():
+    """Test ImportScreen append mode selection."""
+    screen = ImportScreen()
+    result = None
+    
+    async def capture_result(r):
+        nonlocal result
+        result = r
+    
+    async with screen.run_test() as pilot:
+        screen.dismiss = capture_result
+        input_widget = screen.query_one("#import-filepath", Input)
+        input_widget.value = "~/test.json"
+        await pilot.press("a")
+        assert result == ("append", "~/test.json")
+
+
+@pytest.mark.asyncio
+async def test_import_screen_replace_selection():
+    """Test ImportScreen replace mode selection."""
+    screen = ImportScreen()
+    result = None
+    
+    async def capture_result(r):
+        nonlocal result
+        result = r
+    
+    async with screen.run_test() as pilot:
+        screen.dismiss = capture_result
+        input_widget = screen.query_one("#import-filepath", Input)
+        input_widget.value = "~/test.json"
+        await pilot.press("r")
+        assert result == ("replace", "~/test.json")
+
+
+@pytest.mark.asyncio
+async def test_app_export_json_integration(app):
+    """Test complete export workflow with JSON format."""
+    # Add some test todos
+    todo1 = TodoItem(title="Task 1")
+    todo2 = TodoItem(title="Task 2")
+    app.storage.save([todo1, todo2])
+    
+    async with app.run_test() as pilot:
+        app.load_todos()
+        
+        # Trigger export
+        await pilot.press("e")
+        
+        # Wait for modal to appear
+        await pilot.pause()
+        
+        # Fill in filename and select JSON
+        input_widget = app.screen.query_one("#export-filename", Input)
+        input_widget.value = "test-export"
+        await pilot.press("j")
+        
+        # Check that export file was created
+        export_path = Path.home() / "todo-exports" / "test-export.json"
+        try:
+            assert export_path.exists()
+            
+            # Verify content
+            import json
+            data = json.loads(export_path.read_text())
+            assert len(data) == 2
+            assert data[0]["title"] == "Task 1"
+            assert data[1]["title"] == "Task 2"
+        finally:
+            # Cleanup
+            if export_path.exists():
+                export_path.unlink()
+
+
+@pytest.mark.asyncio
+async def test_app_export_markdown_integration(app):
+    """Test complete export workflow with Markdown format."""
+    # Add some test todos
+    todo1 = TodoItem(title="Task 1")
+    todo2 = TodoItem(title="Task 2")
+    todo2.toggle_completed()
+    app.storage.save([todo1, todo2])
+    
+    async with app.run_test() as pilot:
+        app.load_todos()
+        
+        # Trigger export
+        await pilot.press("e")
+        
+        # Wait for modal to appear
+        await pilot.pause()
+        
+        # Fill in filename and select Markdown
+        input_widget = app.screen.query_one("#export-filename", Input)
+        input_widget.value = "test-export-md"
+        await pilot.press("m")
+        
+        # Check that export file was created
+        export_path = Path.home() / "todo-exports" / "test-export-md.md"
+        try:
+            assert export_path.exists()
+            
+            # Verify content
+            content = export_path.read_text()
+            assert "# TODO List" in content
+            assert "Task 1" in content
+            assert "Task 2" in content
+        finally:
+            # Cleanup
+            if export_path.exists():
+                export_path.unlink()
+
+
+@pytest.mark.asyncio
+async def test_app_import_json_integration(app):
+    """Test complete import workflow."""
+    # Create a test import file
+    import_todos = [
+        TodoItem(title="Imported task 1"),
+        TodoItem(title="Imported task 2"),
+    ]
+    
+    with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json') as f:
+        import_path = Path(f.name)
+        import json
+        data = [todo.to_dict() for todo in import_todos]
+        f.write(json.dumps(data, indent=2))
+    
+    try:
+        async with app.run_test() as pilot:
+            # Trigger import
+            await pilot.press("i")
+            
+            # Wait for modal to appear
+            await pilot.pause()
+            
+            # Fill in filepath and select append mode
+            input_widget = app.screen.query_one("#import-filepath", Input)
+            input_widget.value = str(import_path)
+            await pilot.press("a")
+            
+            # Wait for import to complete
+            await pilot.pause()
+            
+            # Check that todos were imported
+            assert len(app.todos) == 2
+            assert app.todos[0].title == "Imported task 1"
+            assert app.todos[1].title == "Imported task 2"
+    finally:
+        # Cleanup
+        if import_path.exists():
+            import_path.unlink()
+
+
+@pytest.mark.asyncio
+async def test_app_import_replace_mode(app):
+    """Test import with replace mode."""
+    # Add existing todos
+    existing = TodoItem(title="Existing task")
+    app.storage.save([existing])
+    
+    # Create a test import file
+    import_todos = [
+        TodoItem(title="New task"),
+    ]
+    
+    with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json') as f:
+        import_path = Path(f.name)
+        import json
+        data = [todo.to_dict() for todo in import_todos]
+        f.write(json.dumps(data, indent=2))
+    
+    try:
+        async with app.run_test() as pilot:
+            app.load_todos()
+            
+            # Verify existing todo
+            assert len(app.todos) == 1
+            assert app.todos[0].title == "Existing task"
+            
+            # Trigger import
+            await pilot.press("i")
+            
+            # Wait for modal to appear
+            await pilot.pause()
+            
+            # Fill in filepath and select replace mode
+            input_widget = app.screen.query_one("#import-filepath", Input)
+            input_widget.value = str(import_path)
+            await pilot.press("r")
+            
+            # Wait for import to complete
+            await pilot.pause()
+            
+            # Check that existing todos were replaced
+            assert len(app.todos) == 1
+            assert app.todos[0].title == "New task"
+    finally:
+        # Cleanup
+        if import_path.exists():
+            import_path.unlink()
