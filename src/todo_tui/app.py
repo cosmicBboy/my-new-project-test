@@ -150,8 +150,9 @@ class DescriptionScreen(ModalScreen[Optional[str]]):
         """Save the description and close the screen."""
         textarea = self.query_one("#description-textarea", TextArea)
         description = textarea.text.strip()
-        # Return the description (or None if empty)
-        self.dismiss(description if description else None)
+        # Return empty string to clear description, or the actual text
+        # This allows distinguishing between cancel (None) and clear ("")
+        self.dismiss(description)
     
     def action_cancel(self) -> None:
         """Cancel and close the screen without saving."""
@@ -561,8 +562,9 @@ class TodoApp(App):
         # Show edit screen
         new_description = await self.push_screen_wait(DescriptionScreen(todo))
         
-        # If user saved (returned a value), update the todo
+        # None means user canceled, empty string means clear description
         if new_description is not None:
+            # Update description: empty string clears it, otherwise sets the new value
             todo.description = new_description if new_description else None
             try:
                 self.storage.update(todo)
