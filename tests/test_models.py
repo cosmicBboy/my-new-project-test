@@ -17,6 +17,16 @@ def test_todo_item_creation():
     assert isinstance(todo.created_at, datetime)
     assert todo.completed_at is None
     assert todo.postpone_until is None
+    assert todo.description is None
+
+
+def test_todo_item_creation_with_description():
+    """Test creating a TODO item with a description."""
+    todo = TodoItem(title="Test task", description="This is a detailed description")
+    
+    assert todo.title == "Test task"
+    assert todo.description == "This is a detailed description"
+    assert todo.has_description() is True
 
 
 def test_todo_item_toggle_completed():
@@ -102,6 +112,26 @@ def test_todo_item_is_postponed_past_date():
     assert todo.is_postponed() is True
 
 
+def test_todo_item_has_description():
+    """Test checking if a TODO has a description."""
+    todo = TodoItem(title="Test task")
+    
+    # Initially no description
+    assert todo.has_description() is False
+    
+    # Add description
+    todo.description = "This is a description"
+    assert todo.has_description() is True
+    
+    # Empty description
+    todo.description = ""
+    assert todo.has_description() is False
+    
+    # Whitespace only
+    todo.description = "   "
+    assert todo.has_description() is False
+
+
 def test_todo_item_to_dict():
     """Test serialization to dictionary."""
     todo = TodoItem(title="Test task")
@@ -113,6 +143,15 @@ def test_todo_item_to_dict():
     assert "created_at" in data
     assert data["completed_at"] is None
     assert data["postpone_until"] is None
+    assert data["description"] is None
+
+
+def test_todo_item_to_dict_with_description():
+    """Test serialization with description."""
+    todo = TodoItem(title="Test task", description="A detailed note")
+    data = todo.to_dict()
+    
+    assert data["description"] == "A detailed note"
 
 
 def test_todo_item_to_dict_with_postpone():
@@ -138,6 +177,18 @@ def test_todo_item_from_dict():
     assert restored.created_at == original.created_at
     assert restored.completed_at == original.completed_at
     assert restored.postpone_until == original.postpone_until
+    assert restored.description == original.description
+
+
+def test_todo_item_from_dict_with_description():
+    """Test deserialization of a TODO with description."""
+    original = TodoItem(title="Test task", description="My notes here")
+    data = original.to_dict()
+    
+    restored = TodoItem.from_dict(data)
+    
+    assert restored.description == "My notes here"
+    assert restored.has_description() is True
 
 
 def test_todo_item_from_dict_with_completion():
@@ -165,6 +216,25 @@ def test_todo_item_from_dict_with_postpone():
     assert restored.is_postponed() is True
 
 
+def test_todo_item_from_dict_backward_compatibility():
+    """Test that old data without description field loads correctly."""
+    # Simulate old data format without description field
+    data = {
+        "id": "12345678-1234-5678-1234-567812345678",
+        "title": "Old task",
+        "completed": False,
+        "created_at": datetime.now().isoformat(),
+        "completed_at": None,
+        "postpone_until": None,
+    }
+    
+    restored = TodoItem.from_dict(data)
+    
+    assert restored.title == "Old task"
+    assert restored.description is None
+    assert restored.has_description() is False
+
+
 def test_todo_item_str():
     """Test string representation."""
     todo = TodoItem(title="Test task")
@@ -181,3 +251,59 @@ def test_todo_item_str_postponed():
     todo.postpone_until_tomorrow()
     
     assert "[ ] Test task [postponed]" == str(todo)
+
+
+def test_todo_item_str_with_description():
+    """Test string representation with description indicator."""
+    todo = TodoItem(title="Test task", description="Some notes")
+    
+    assert str(todo) == "[ ] Test task [+]"
+
+
+def test_todo_item_str_with_description_and_postponed():
+    """Test string representation with both description and postponed indicators."""
+    todo = TodoItem(title="Test task", description="Some notes")
+    todo.postpone_until_tomorrow()
+    
+    result = str(todo)
+    assert "[ ] Test task" in result
+    assert "[postponed]" in result
+    assert "[+]" in result
+
+
+def test_todo_item_multiline_description():
+    """Test TODO with multi-line description."""
+    description = """This is a multi-line description.
+It has multiple lines.
+- Item 1
+- Item 2
+And some more text."""
+    
+    todo = TodoItem(title="Complex task", description=description)
+    
+    assert todo.has_description() is True
+    assert "\n" in todo.description
+    assert "- Item 1" in todo.description
+
+
+def test_todo_item_description_with_markdown():
+    """Test TODO with markdown-formatted description."""
+    description = """# Main Task
+## Subtask 1
+- Check error handling
+- Verify test coverage
+
+## Links
+PR: https://github.com/team/repo/pull/234
+Docs: https://docs.example.com
+
+## Code
+`print("Hello, World!")`
+"""
+    
+    todo = TodoItem(title="Review PR", description=description)
+    
+    assert todo.has_description() is True
+    assert "# Main Task" in todo.description
+    assert "https://github.com" in todo.description
+    assert "`print" in todo.description
