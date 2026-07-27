@@ -1,5 +1,6 @@
 """Main Textual application for the TODO TUI app."""
 
+from pathlib import Path
 from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Vertical
@@ -8,6 +9,10 @@ from textual.message import Message
 
 from .models import TodoItem
 from .storage import TodoStorage
+from .keybindings import KeyBindingsManager
+from .help_dialog import HelpDialog
+from .tutorial import TutorialScreen
+from .settings_dialog import SettingsDialog
 
 
 class TodoListItem(ListItem):
@@ -151,18 +156,26 @@ class TodoApp(App):
     }
     """
     
-    BINDINGS = [
-        Binding("q", "quit", "Quit", priority=True),
-        Binding("space", "toggle_todo", "Toggle", show=True),
-        Binding("d", "delete_todo", "Delete", show=True),
-        Binding("p", "postpone_todo", "Postpone", show=True),
-    ]
-    
     def __init__(self):
         """Initialize the TODO app."""
         super().__init__()
         self.storage = TodoStorage()
+        self.keybindings_manager = KeyBindingsManager()
         self.todos: list[TodoItem] = []
+        self._tutorial_shown_flag = Path.home() / ".todo-tui-tutorial-shown"
+        self._update_bindings()
+    
+    def _update_bindings(self) -> None:
+        """Update app bindings from keybindings manager."""
+        bindings = self.keybindings_manager.get_all_bindings()
+        
+        self.BINDINGS = [
+            Binding(bindings.get("quit", "q"), "quit", "Quit", priority=True),
+            Binding(bindings.get("toggle", "space"), "toggle_todo", "Toggle", show=True),
+            Binding(bindings.get("delete", "d"), "delete_todo", "Delete", show=True),
+            Binding(bindings.get("postpone", "p"), "postpone_todo", "Postpone", show=True),
+            Binding(bindings.get("help", "question_mark"), "show_help", "Help", show=True),
+        ]
     
     def compose(self) -> ComposeResult:
         """Compose the app layout."""
@@ -178,6 +191,15 @@ class TodoApp(App):
         """Load todos when the app starts."""
         self.title = "✨ TODO TUI App ✨"
         self.load_todos()
+        
+        # Show tutorial if this is the first run
+        if not self._tutorial_shown_flag.exists():
+            self.show_tutorial()
+            self._tutorial_shown_flag.touch()
+    
+    def show_tutorial(self) -> None:
+        """Show the tutorial screen for new users."""
+        self.push_screen(TutorialScreen())
     
     def load_todos(self) -> None:
         """Load todos from storage and display them."""
@@ -258,6 +280,10 @@ class TodoApp(App):
                 self.notify(f"Postponed until {todo.postpone_until}", timeout=2)
             except Exception as e:
                 self.notify(f"Error postponing todo: {e}", severity="error")
+    
+    def action_show_help(self) -> None:
+        """Show the keyboard shortcuts help dialog."""
+        self.push_screen(HelpDialog(self.keybindings_manager))
 
 
 def main():
